@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 export type Pin = { id: string; lat: number; lng: number; label: string; href?: string; title?: string };
 
 /** OpenStreetMap + price-pill markers. No API key needed. */
-export default function MapView({ pins, zoom = 11, className = "", controls = true }: { pins: Pin[]; zoom?: number; className?: string; controls?: boolean }) {
+export default function MapView({ pins, zoom = 11, className = "", controls = true, padBottom = 50 }: { pins: Pin[]; zoom?: number; className?: string; controls?: boolean; padBottom?: number }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
 
@@ -29,7 +29,7 @@ export default function MapView({ pins, zoom = 11, className = "", controls = tr
         const mk = L.marker([p.lat, p.lng], { icon, title: p.title }).addTo(m);
         if (p.href) mk.on("click", () => (window.location.href = p.href!));
       });
-      if (valid.length > 1) m.fitBounds(L.latLngBounds(valid.map((p) => [p.lat, p.lng])), { padding: [50, 50] });
+      if (valid.length > 1) m.fitBounds(L.latLngBounds(valid.map((p) => [p.lat, p.lng])), { paddingTopLeft: [50, 70], paddingBottomRight: [50, padBottom] });
       else if (valid.length === 1) m.setView([valid[0].lat, valid[0].lng], 13);
     })();
     return () => {
@@ -37,7 +37,7 @@ export default function MapView({ pins, zoom = 11, className = "", controls = tr
       map.current?.remove();
       map.current = null;
     };
-  }, [pins, zoom, controls]);
+  }, [pins, zoom, controls, padBottom]);
 
   return <div ref={el} className={`relative isolate z-0 h-full w-full ${className}`} role="region" aria-label="Map of spaces" />;
 }

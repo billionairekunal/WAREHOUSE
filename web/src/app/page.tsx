@@ -67,21 +67,20 @@ export default async function Home() {
             </dl>
           </div>
 
-          {/* Map card + floating search (car app pattern) */}
+          {/* Map card with the search card docked inside its bottom edge */}
           <div className="rise relative [animation-delay:120ms]">
-            <div className="relative h-[420px] overflow-hidden rounded-[2.5rem] border-4 border-white shadow-[var(--shadow-lift)] sm:h-[520px]">
-              <LazyMap pins={pins} controls={false} />
+            <div className="relative h-[640px] overflow-hidden rounded-[2.5rem] border-4 border-white bg-ice/40 shadow-[var(--shadow-lift)] sm:h-[620px]">
+              <LazyMap pins={pins} controls={false} padBottom={340} />
               <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex items-start justify-between p-4">
-                <span className="glass pointer-events-auto inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-bold shadow-[var(--shadow-soft)]">
+                <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-bold shadow-[var(--shadow-soft)]">
                   <span className="relative flex size-2.5"><span className="absolute inset-0 animate-ping rounded-full bg-coral/70" /><span className="relative size-2.5 rounded-full bg-coral" /></span>
                   {s.listings} spaces live near Pune
                 </span>
-                <Link href="/search" aria-label="Open full map" className="glass pointer-events-auto grid size-11 place-items-center rounded-full shadow-[var(--shadow-soft)]"><LocateFixed className="size-5" /></Link>
+                <Link href="/search" aria-label="Open full map" className="pointer-events-auto grid size-11 place-items-center rounded-full bg-white shadow-[var(--shadow-soft)]"><LocateFixed className="size-5" /></Link>
               </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[500] h-40 bg-gradient-to-t from-bg/90 to-transparent" />
-            </div>
-            <div className="relative z-[600] -mt-24 px-3 pr-6 sm:px-6 sm:pr-10">
-              <HeroSearch />
+              <div className="absolute inset-x-3 bottom-3 z-[600] sm:inset-x-4 sm:bottom-4">
+                <HeroSearch count={s.listings} />
+              </div>
             </div>
           </div>
         </section>
