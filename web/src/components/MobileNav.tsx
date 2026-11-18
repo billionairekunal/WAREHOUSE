@@ -24,7 +24,7 @@ function Bar() {
     return path.startsWith(base);
   };
   return (
-    <nav aria-label="Primary" className="fixed inset-x-0 bottom-3 z-50 px-4 md:hidden">
+    <nav aria-label="Primary" className="fixed inset-x-0 bottom-3 z-50 px-4 lg:hidden">
       <ul className="glass mx-auto flex max-w-sm items-center justify-between rounded-full p-1.5 shadow-[var(--shadow-lift)]">
         {items.map(({ href, label, icon: Icon }) => {
           const active = isActive(href, label);

@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 
 export function Footer() {
   return (
-    <footer className="navy-glow mt-24 px-4 pb-28 pt-16 text-white sm:px-6 md:pb-12">
+    <footer className="navy-glow mt-24 px-4 pb-28 pt-16 text-white sm:px-6 lg:pb-12">
       <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Logo light />
