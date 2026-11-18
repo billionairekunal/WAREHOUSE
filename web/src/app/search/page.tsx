@@ -55,7 +55,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
       <Filters count={listings.length} />
       <ResultsLayout pins={pins}>
         {listings.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-5">
             {listings.map((l, i) => <ListingCard key={l.id} l={l} saved={saved.has(l.id)} priority={i < 2} />)}
           </div>
         ) : (
