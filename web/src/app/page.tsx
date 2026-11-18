@@ -34,8 +34,13 @@ export default async function Home() {
   return (
     <>
       <main>
+        {/* ================= SEARCH (independent, top of page) ================= */}
+        <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+          <HeroSearch count={s.listings} />
+        </section>
+
         {/* ================= HERO ================= */}
-        <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 pt-8 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-12 lg:pt-14">
+        <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 pt-10 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-12 lg:pt-14">
           <div className="rise">
             <p className="text-base font-semibold text-muted">
               {profile?.full_name ? <>{greeting()}, <b className="text-ink">{profile.full_name.split(" ")[0]}</b> 👋</> : <>{greeting()} 👋</>}
@@ -67,19 +72,16 @@ export default async function Home() {
             </dl>
           </div>
 
-          {/* Map card with the search card docked inside its bottom edge */}
+          {/* Live map */}
           <div className="rise relative [animation-delay:120ms]">
-            <div className="relative h-[640px] overflow-hidden rounded-[2.5rem] border-4 border-white bg-ice/40 shadow-[var(--shadow-lift)] sm:h-[620px]">
-              <LazyMap pins={pins} controls={false} padBottom={340} />
+            <div className="relative h-[380px] overflow-hidden rounded-[2.5rem] border-4 border-white bg-ice/40 shadow-[var(--shadow-lift)] sm:h-[500px]">
+              <LazyMap pins={pins} controls={false} />
               <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex items-start justify-between p-4">
                 <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-bold shadow-[var(--shadow-soft)]">
                   <span className="relative flex size-2.5"><span className="absolute inset-0 animate-ping rounded-full bg-coral/70" /><span className="relative size-2.5 rounded-full bg-coral" /></span>
                   {s.listings} spaces live near Pune
                 </span>
                 <Link href="/search" aria-label="Open full map" className="pointer-events-auto grid size-11 place-items-center rounded-full bg-white shadow-[var(--shadow-soft)]"><LocateFixed className="size-5" /></Link>
-              </div>
-              <div className="absolute inset-x-3 bottom-3 z-[600] sm:inset-x-4 sm:bottom-4">
-                <HeroSearch count={s.listings} />
               </div>
             </div>
           </div>
