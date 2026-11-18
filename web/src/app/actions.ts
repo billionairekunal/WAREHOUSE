@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/push";
@@ -46,10 +47,12 @@ export async function signUp(_: unknown, fd: FormData): Promise<Result> {
   const password = String(fd.get("password"));
   if (password.length < 8) return { ok: false, error: "Password must be at least 8 characters." };
   const supabase = await createClient();
+  const origin = (await headers()).get("origin"); // confirmation email returns to whichever site they signed up on
   const { data, error } = await supabase.auth.signUp({
     email: String(fd.get("email")),
     password,
     options: {
+      emailRedirectTo: origin ? `${origin}/auth/callback?next=${fd.get("role") === "owner" ? "/list-space" : "/dashboard"}` : undefined,
       data: {
         full_name: str(fd.get("full_name")),
         company_name: str(fd.get("company_name")),
