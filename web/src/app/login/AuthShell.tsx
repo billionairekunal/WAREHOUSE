@@ -9,7 +9,7 @@ export function AuthShell({ title, accent, sub, children }: { title: string; acc
   return (
     <main className="mx-auto grid max-w-7xl gap-6 pb-28 sm:px-6 sm:pt-6 lg:grid-cols-2 lg:pb-12">
       {/* photo panel */}
-      <div className="relative -mt-[76px] h-[340px] overflow-hidden rounded-b-[2.5rem] sm:mt-0 sm:rounded-[2.5rem] lg:h-auto lg:min-h-[680px]">
+      <div className="relative h-[340px] overflow-hidden rounded-b-[2.5rem] sm:mt-0 sm:rounded-[2.5rem] lg:h-auto lg:min-h-[680px]">
         <Image src={img(PHOTO, 1400)} alt="" fill sizes="(max-width:1024px) 100vw, 50vw" className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-navy/10" />
         <div className="absolute inset-x-6 bottom-14 text-white sm:inset-x-8 lg:bottom-8">
