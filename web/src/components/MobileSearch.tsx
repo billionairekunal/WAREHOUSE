@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, LayoutGrid, MapPin, Ruler, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { MICRO_MARKETS, STORAGE_TYPES } from "@/lib/data";
 import { buildSearchUrl, type SearchBase } from "@/lib/searchParams";
@@ -26,6 +26,15 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
   const [when, setWhen] = useState<{ label: string; date: string }>(base?.from
     ? { label: prettyDate(base.from), date: base.from }
     : { label: "", date: "" });
+
+  // after the user types an exact size and pauses, move on to the move-in date
+  const sizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (sizeTimer.current) clearTimeout(sizeTimer.current); }, []);
+  const toWhen = () => {
+    if (sizeTimer.current) clearTimeout(sizeTimer.current);
+    (document.activeElement as HTMLElement | null)?.blur(); // close the phone keyboard
+    setStep("when");
+  };
 
   // lock page scroll and support the Escape key while the sheet is open
   useEffect(() => {
@@ -118,13 +127,19 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
             <Section open={step === "size"} onOpen={() => setStep("size")} title="How much space?" value={area ? `${area.toLocaleString("en-IN")}+ sq ft` : "Any size"} icon={Ruler} tint="bg-coral/10 text-coral">
               <div className="flex flex-wrap gap-2">
                 {SIZES.map((s) => (
-                  <Chip key={s} active={area === s} onClick={() => { setArea(area === s ? "" : s); }}>{fmt(s)}+ sq ft</Chip>
+                  <Chip key={s} active={area === s} onClick={() => { if (area === s) setArea(""); else { setArea(s); toWhen(); } }}>{fmt(s)}+ sq ft</Chip>
                 ))}
               </div>
               <label className="mt-4 flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-3 focus-within:border-sky focus-within:bg-white">
                 <span className="text-sm font-semibold text-muted">Exact</span>
-                <input type="number" inputMode="numeric" min={100} step={100} value={area} placeholder="e.g. 12,000"
-                  onChange={(e) => setArea(e.target.value ? Number(e.target.value) : "")}
+                <input type="number" inputMode="numeric" min={100} step={100} value={area} placeholder="e.g. 12,000" enterKeyHint="next"
+                  onKeyDown={(e) => { if (e.key === "Enter" && area) { e.preventDefault(); toWhen(); } }}
+                  onChange={(e) => {
+                    const v = e.target.value ? Number(e.target.value) : "";
+                    setArea(v);
+                    if (sizeTimer.current) clearTimeout(sizeTimer.current);
+                    if (v && v >= 100) sizeTimer.current = setTimeout(toWhen, 1200);
+                  }}
                   className="min-w-0 flex-1 bg-transparent text-right text-base font-bold outline-none placeholder:font-medium placeholder:text-muted" />
                 <span className="text-sm font-semibold text-muted">sq ft</span>
               </label>
