@@ -18,7 +18,9 @@ export async function proxy(request: NextRequest) {
       },
     },
   );
-  const { data: { user } } = await supabase.auth.getUser();
+  // getClaims verifies the JWT locally and refreshes an expired session when needed
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? data.claims : null;
 
   const p = request.nextUrl.pathname;
   if (!user && (p.startsWith("/dashboard") || p.startsWith("/list-space") || p.startsWith("/admin"))) {
