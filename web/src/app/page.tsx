@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardCheck, Clock3, LayoutGrid, LocateFixed, MapPinned, ShieldCheck, Sparkles, Wallet, Zap } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BadgeCheck, Check, ClipboardCheck, Clock3, LayoutGrid, LocateFixed, MapPinned, ShieldCheck, Sparkles, Wallet, Zap } from "lucide-react";
 import { getSession } from "@/lib/supabase/server";
 import { CARD_FIELDS, type CardListing, STORAGE_TYPES, img } from "@/lib/data";
 import { HeroSearch } from "@/components/HeroSearch";
@@ -39,14 +39,15 @@ export default async function Home() {
         {/* ================= HERO ================= */}
         <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 pt-10 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-12 lg:pt-14">
           <div className="rise">
-            <p className="text-base font-semibold text-muted">
-              {profile?.full_name ? <>{greeting()}, <b className="text-ink">{profile.full_name.split(" ")[0]}</b> 👋</> : <>{greeting()} 👋</>}
+            <p className="inline-flex items-center gap-2 rounded-full bg-white py-1.5 pl-2 pr-3.5 text-sm font-semibold text-muted shadow-sm ring-1 ring-line">
+              <span className="relative flex size-2.5"><span className="absolute inset-0 animate-ping rounded-full bg-mint/60" /><span className="relative size-2.5 rounded-full bg-mint" /></span>
+              {profile?.full_name ? <>{greeting()}, <b className="text-ink">{profile.full_name.split(" ")[0]}</b> 👋</> : <>{s.listings} verified spaces live in Pune</>}
             </p>
-            <h1 className="mt-3 text-[3.2rem] font-black leading-[0.95] tracking-[-0.05em] sm:text-7xl lg:text-[5.2rem]">
+            <h1 className="mt-5 text-[2.9rem] font-extrabold leading-[1.04] tracking-[-0.035em] sm:text-7xl lg:text-[4.6rem]">
               Find your next <span className="hl">warehouse</span>
-              <span className="font-serif font-normal italic tracking-normal text-brand"> in days.</span>
+              <span className="mt-1 block font-serif text-[1.08em] font-normal italic leading-[1] tracking-normal text-brand">in days.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-lg text-muted">
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted">
               Physically verified warehouses, open yards and flex storage across Chakan, Talegaon and Pune. Real specs, true cost, quotes in 48 hours.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -55,15 +56,22 @@ export default async function Home() {
               </Link>
               <Link href="/list-space" className="btn btn-ghost !px-6 !py-3.5 text-base">List your warehouse</Link>
             </div>
-            <dl className="mt-10 flex flex-wrap gap-x-8 gap-y-4">
+            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-muted">
+              {["Site-visited & verified", "True cost upfront", "Free for companies"].map((t) => (
+                <li key={t} className="inline-flex items-center gap-1.5">
+                  <span className="grid size-5 place-items-center rounded-full bg-mint/15 text-mint"><Check className="size-3.5" strokeWidth={3} /></span>{t}
+                </li>
+              ))}
+            </ul>
+            <dl className="mt-8 grid max-w-md grid-cols-3 divide-x divide-line rounded-[1.5rem] bg-white py-4 shadow-[var(--shadow-soft)] ring-1 ring-line">
               {[
                 [s.sqft >= 1000 ? `${Math.round(s.sqft / 1000)}K` : s.sqft, "sq ft available", "text-brand"],
                 [s.verified, "verified spaces", "text-mint"],
                 [s.markets, "micro-markets", "text-coral"],
               ].map(([v, l, c]) => (
-                <div key={l as string}>
-                  <dt className={`display text-4xl font-black ${c}`}>{v}</dt>
-                  <dd className="text-sm font-semibold text-muted">{l}</dd>
+                <div key={l as string} className="px-4 text-center">
+                  <dt className={`display text-3xl font-black ${c}`}>{v}</dt>
+                  <dd className="mt-0.5 text-xs font-semibold text-muted">{l}</dd>
                 </div>
               ))}
             </dl>
@@ -183,7 +191,7 @@ export default async function Home() {
             <div className="relative grid items-end gap-8 lg:grid-cols-[1.4fr_1fr]">
               <div>
                 <span className="eyebrow inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-ice"><Sparkles className="size-3.5" /> For owners & developers</span>
-                <h2 className="mt-5 text-4xl font-black leading-[0.95] sm:text-7xl">Fill your vacancy with <span className="hl">serious</span> tenants.</h2>
+                <h2 className="mt-5 text-4xl font-black leading-[0.95] sm:text-7xl">Fill your vacancy with <span className="font-serif font-normal italic text-lime">serious</span> tenants.</h2>
                 <p className="mt-5 max-w-lg text-lg text-ice/80">Free to list. Get verified, receive GST-verified company leads, send quotes and track every deal from one dashboard.</p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">

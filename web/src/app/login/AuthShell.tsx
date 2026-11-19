@@ -13,7 +13,7 @@ export function AuthShell({ title, accent, sub, children }: { title: string; acc
         <Image src={img(PHOTO, 1400)} alt="" fill sizes="(max-width:1024px) 100vw, 50vw" className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-navy/10" />
         <div className="absolute inset-x-6 bottom-14 text-white sm:inset-x-8 lg:bottom-8">
-          <h1 className="text-5xl font-black leading-[0.92] sm:text-6xl">{title}<br /><span className="hl">{accent}</span></h1>
+          <h1 className="text-5xl font-black leading-[0.92] sm:text-6xl">{title}<br /><span className="font-serif font-normal italic text-lime">{accent}</span></h1>
           <p className="mt-3 max-w-sm text-ice/85">{sub}</p>
           <ul className="mt-6 hidden space-y-3 lg:block">
             {[[BadgeCheck, "Only physically verified listings"], [Gauge, "Compare true cost, not just rent"], [FileSignature, "Quotes, visits and agreements in one place"]].map(([I, t]) => {

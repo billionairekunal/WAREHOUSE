@@ -73,34 +73,24 @@ p { text-wrap: pretty; }
 }
 
 @layer components {
-  /* lime marker highlight behind a word, like "Find The [Perfect] Place" */
-  /* Hand-drawn highlight: a tilted lime marker swipe with a blue pen swoosh underneath */
+  /* Highlighter-pen stroke across the lower half of a word (text keeps its own colour) */
   .hl {
     position: relative;
     display: inline-block;
     isolation: isolate;
-    color: var(--color-ink);
-    padding: 0 0.12em;
-    margin: 0 0.04em;
+    padding: 0 0.06em;
   }
   .hl::before {
     content: "";
     position: absolute;
     z-index: -1;
-    inset: 0.1em -0.06em 0.02em -0.1em;
-    background: linear-gradient(100deg, rgb(212 245 90 / 0.85), var(--color-lime) 12%, var(--color-lime) 88%, rgb(212 245 90 / 0.7));
-    border-radius: 0.35em 0.9em 0.45em 0.75em / 0.6em 0.4em 0.7em 0.5em;
-    transform: rotate(-1.6deg) skewX(-8deg);
-  }
-  .hl::after {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    left: 4%;
-    right: -2%;
-    bottom: -0.2em;
-    height: 0.24em;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 45 3, 110 2, 197 7' fill='none' stroke='%231951fc' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+    left: -0.04em;
+    right: -0.06em;
+    bottom: 0.04em;
+    height: 0.42em;
+    background: var(--color-lime);
+    border-radius: 0.1em 0.28em 0.16em 0.22em;
+    transform: rotate(-1deg) skewX(-12deg);
   }
   /* CTA with an arrow bubble at the end, like "Book Now →" */
   .btn-arrow { padding-right: 0.4rem !important; }
