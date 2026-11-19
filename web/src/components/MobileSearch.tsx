@@ -8,7 +8,6 @@ import { Calendar, addDays, prettyDate } from "./Calendar";
 import { useT } from "@/lib/i18n/client";
 import { DATE_LOCALE, TYPE_KEY, type Key } from "@/lib/i18n";
 
-const POPULAR = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
 const SIZES = [2000, 5000, 10000, 25000, 50000];
 const WHEN: [Key, number | null][] = [["s.immediately", 0], ["ms.within1", 30], ["ms.within3", 90], ["ms.flexible", null]];
 
@@ -56,46 +55,30 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
   };
   const clear = () => { setPlace(""); setType(""); setArea(""); setWhen({ label: "", date: "" }); setStep("where"); };
   const typeShort = type && TYPE_KEY[type] ? t(TYPE_KEY[type]) : undefined;
+  const hasChoices = !!(type || area || when.label || mode === "flex");
+  const choiceSummary = [mode === "flex" ? t("s.flex") : null, typeShort, area ? t("ms.sqftPlus", { n: fmt(area) }) : null, when.label || null]
+    .filter(Boolean).join(" · ");
 
   return (
     <div className="sm:hidden">
-      {/* ---------- Search card ---------- */}
-      <div className="rounded-[1.75rem] bg-white p-2.5 shadow-[0_22px_50px_-22px_rgb(3_25_91/0.5)] ring-1 ring-black/5">
-        <button type="button" onClick={() => { setStep("where"); setOpen(true); }}
-          className="flex w-full items-center gap-3 rounded-[1.25rem] px-2 py-2 text-left active:bg-surface">
-          <span className="tile-icon size-11 shrink-0 bg-brand/10 text-brand"><MapPin className="size-5" /></span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-base font-extrabold">{place || t("ms.where")}</span>
-            <span className="block truncate text-xs font-semibold text-muted">{place ? t("s.region") : t("s.placeholder")}</span>
+      {/* ---------- One search bar; tapping it starts the step-by-step selection ---------- */}
+      <button type="button" onClick={() => { setStep("where"); setOpen(true); }} aria-label={t("ms.where")}
+        className="group block w-full rounded-full bg-gradient-to-r from-sky via-brand to-royal p-[2px] text-left shadow-[0_20px_45px_-20px_rgb(25_81_252/0.75)] transition active:scale-[0.98]">
+        <span className="flex items-center gap-2.5 rounded-full bg-white py-2 pl-2 pr-2">
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-sky to-royal text-white shadow-[var(--shadow-glow)]">
+            <Search className="size-5" strokeWidth={2.5} />
           </span>
-          {mode === "flex" && <span className="shrink-0 rounded-full bg-lime px-2.5 py-1 text-[11px] font-extrabold text-ink">{t("s.flex")}</span>}
-        </button>
-        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-          {([
-            ["what", LayoutGrid, typeShort ?? t("s.anyType"), !!type, "text-amber"],
-            ["size", Ruler, area ? t("ms.sqftPlus", { n: fmt(area) }) : t("ms.anySize"), !!area, "text-coral"],
-            ["when", CalendarDays, when.label || t("s.anyTime"), !!when.label, "text-mint"],
-          ] as const).map(([st, Icon, label, set, tint]) => (
-            <button key={st} type="button" onClick={() => { setStep(st); setOpen(true); }}
-              className={`flex min-w-0 items-center gap-1.5 rounded-2xl px-2.5 py-2.5 text-left text-xs font-bold transition active:scale-[0.98] ${set ? "bg-navy/5 text-ink ring-1 ring-navy/15" : "bg-surface text-muted"}`}>
-              <Icon className={`size-4 shrink-0 ${tint}`} /><span className="truncate">{label}</span>
-            </button>
-          ))}
-        </div>
-        <button type="button" onClick={() => go()}
-          className="btn btn-primary btn-arrow mt-2 w-full !justify-between !py-2 !pl-5 text-base">
-          <span className="flex items-center gap-2"><Search className="size-5" /> {mode === "flex" ? t("ms.searchFlex") : t("ms.searchN", { n: count })}</span>
-          <span className="bubble"><ArrowRight className="size-4" /></span>
-        </button>
-      </div>
-      <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
-        {POPULAR.map((m) => (
-          <button key={m} type="button" onClick={() => { setPlace(m); go(m); }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-sm font-bold text-ink ring-1 ring-line active:bg-lime">
-            <MapPin className="size-3.5 text-brand" /> {m}
-          </button>
-        ))}
-      </div>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-extrabold text-ink">{place || t("ms.where")}</span>
+            <span className="block truncate text-xs font-semibold text-muted">
+              {hasChoices ? choiceSummary : t("ms.hint")}
+            </span>
+          </span>
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface text-navy transition group-active:translate-x-0.5">
+            <ArrowRight className="size-5" />
+          </span>
+        </span>
+      </button>
 
       {/* ---------- Full-screen sheet ---------- */}
       {open && (

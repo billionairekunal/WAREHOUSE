@@ -156,6 +156,7 @@ const en = {
   // phone search
   "ms.where": "Where do you need space?",
   "ms.anySize": "Any size",
+  "ms.hint": "Location · Type · Size · Move-in",
   "ms.close": "Close search",
   "ms.whereQ": "Where?",
   "ms.anywhere": "Anywhere in Pune",
@@ -532,6 +533,7 @@ const hi: Dict = {
 
   "ms.where": "आपको जगह कहाँ चाहिए?",
   "ms.anySize": "कोई भी साइज़",
+  "ms.hint": "लोकेशन · प्रकार · साइज़ · शिफ़्ट तारीख",
   "ms.close": "खोज बंद करें",
   "ms.whereQ": "कहाँ?",
   "ms.anywhere": "पुणे में कहीं भी",
@@ -899,6 +901,7 @@ const mr: Dict = {
 
   "ms.where": "तुम्हाला जागा कुठे हवी आहे?",
   "ms.anySize": "कोणताही आकार",
+  "ms.hint": "लोकेशन · प्रकार · आकार · शिफ्ट तारीख",
   "ms.close": "शोध बंद करा",
   "ms.whereQ": "कुठे?",
   "ms.anywhere": "पुण्यात कुठेही",
