@@ -7,6 +7,7 @@ import { ListingCard } from "@/components/ListingCard";
 import { Filters } from "./Filters";
 import { HeroSearch } from "@/components/HeroSearch";
 import { ResultsLayout } from "./ResultsLayout";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata: Metadata = { title: "Find warehouse space" };
 
@@ -14,7 +15,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
   const sp = await searchParams;
   const p = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const base = Object.fromEntries(Object.entries(sp).filter(([, v]) => typeof v === "string")) as Record<string, string>;
-  const { supabase, user } = await getSession();
+  const [{ supabase, user }, { t }] = await Promise.all([getSession(), getT()]);
 
   let q = supabase.from("listings").select(CARD_FIELDS).eq("status", "live");
   if (p("type")) q = q.contains("storage_types", [p("type")]);
@@ -53,13 +54,13 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
     <main className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 sm:px-6">
       <div className="mb-5">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
-          Find the right warehouse <span className="font-serif font-normal italic text-brand">faster</span>
+          {t("sp.h1")} <span className="font-serif font-normal italic text-brand">{t("sp.h1b")}</span>
         </h1>
-        <p className="mt-1 text-sm text-muted sm:text-base">Compare verified spaces by location, storage type, specs and price.</p>
+        <p className="mt-1 text-sm text-muted sm:text-base">{t("sp.sub")}</p>
       </div>
       <div className="mb-5">
         <HeroSearch key={JSON.stringify(base)} count={listings.length} base={base}
-          note={`${listings.length} ${listings.length === 1 ? "space" : "spaces"} match`} />
+          note={listings.length === 1 ? t("s.match1") : t("s.match", { n: listings.length })} />
       </div>
       <Filters count={listings.length} />
       <ResultsLayout pins={pins}>
@@ -70,11 +71,11 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
         ) : (
           <div className="card grid place-items-center px-6 py-16 text-center">
             <span className="grid size-14 place-items-center rounded-2xl bg-ice/60 text-brand"><SearchX className="size-6" /></span>
-            <h2 className="mt-4 text-lg font-extrabold">No spaces match these filters</h2>
-            <p className="mt-1 max-w-sm text-sm text-muted">Widen the area or price range, or try flexible short-term storage.</p>
+            <h2 className="mt-4 text-lg font-extrabold">{t("sp.emptyT")}</h2>
+            <p className="mt-1 max-w-sm text-sm text-muted">{t("sp.emptyD")}</p>
             <div className="mt-5 flex gap-2">
-              <Link href="/search" className="btn btn-ghost">Clear filters</Link>
-              <Link href="/search?flex=1" className="btn btn-primary">Try flex storage</Link>
+              <Link href="/search" className="btn btn-ghost">{t("sp.clear")}</Link>
+              <Link href="/search?flex=1" className="btn btn-primary">{t("sp.tryFlex")}</Link>
             </div>
           </div>
         )}

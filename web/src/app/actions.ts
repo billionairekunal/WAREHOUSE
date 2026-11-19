@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { LANG_COOKIE, isLang } from "@/lib/i18n";
+import { getT } from "@/lib/i18n/server";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/push";
@@ -10,6 +12,13 @@ import { notify } from "@/lib/push";
 /** Fire-and-forget push after the response is sent. */
 const push = (userId: string | null | undefined, title: string, body: string, link = "/dashboard") =>
   after(() => notify(userId, { title, body, link }));
+
+// ---------- language ----------
+export async function setLang(lang: string) {
+  if (!isLang(lang)) return;
+  (await cookies()).set(LANG_COOKIE, lang, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  revalidatePath("/", "layout");
+}
 
 // ---------- push tokens ----------
 export async function savePushToken(token: string, userAgent: string) {
@@ -45,7 +54,7 @@ export async function signIn(_: unknown, fd: FormData): Promise<Result> {
 
 export async function signUp(_: unknown, fd: FormData): Promise<Result> {
   const password = String(fd.get("password"));
-  if (password.length < 8) return { ok: false, error: "Password must be at least 8 characters." };
+  if (password.length < 8) return { ok: false, error: (await getT()).t("msg.pwShort") };
   const supabase = await createClient();
   const origin = (await headers()).get("origin"); // confirmation email returns to whichever site they signed up on
   const { data, error } = await supabase.auth.signUp({
@@ -62,7 +71,7 @@ export async function signUp(_: unknown, fd: FormData): Promise<Result> {
     },
   });
   if (error) return { ok: false, error: error.message };
-  if (!data.session) return { ok: true, message: "Check your inbox to confirm your email, then sign in." };
+  if (!data.session) return { ok: true, message: (await getT()).t("msg.checkInbox") };
   redirect(fd.get("role") === "owner" ? "/list-space" : "/dashboard");
 }
 
@@ -90,7 +99,8 @@ export async function requestQuote(_: unknown, fd: FormData): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "login" };
   const area = num(fd.get("area_sqft"));
-  if (!area || area <= 0) return { ok: false, error: "Enter the area you need." };
+  const { t } = await getT();
+  if (!area || area <= 0) return { ok: false, error: t("msg.enterArea") };
   const { data, error } = await supabase.from("quotes").insert({
     listing_id: String(fd.get("listing_id")),
     tenant_id: user.id,
@@ -104,14 +114,15 @@ export async function requestQuote(_: unknown, fd: FormData): Promise<Result> {
     `${data.tenant_company ?? "A company"} needs ${area.toLocaleString("en-IN")} sq ft at ${(data.listing as unknown as { name: string })?.name}`,
     "/dashboard?tab=requests");
   revalidatePath("/dashboard");
-  return { ok: true, message: "Quote requested. The owner usually replies within 24 hours." };
+  return { ok: true, message: t("msg.quoteOk") };
 }
 
 export async function requestVisit(_: unknown, fd: FormData): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "login" };
   const when = str(fd.get("scheduled_at"));
-  if (!when || new Date(when) < new Date()) return { ok: false, error: "Pick a future date and time." };
+  const { t } = await getT();
+  if (!when || new Date(when) < new Date()) return { ok: false, error: t("msg.futureDate") };
   const { data, error } = await supabase.from("visits").insert({
     listing_id: String(fd.get("listing_id")), tenant_id: user.id,
     scheduled_at: new Date(when).toISOString(), note: str(fd.get("note")),
@@ -120,7 +131,7 @@ export async function requestVisit(_: unknown, fd: FormData): Promise<Result> {
   push(data.owner_id, "Site visit requested",
     `${data.tenant_company ?? "A company"} wants to visit ${(data.listing as unknown as { name: string })?.name}`, "/dashboard?tab=visits");
   revalidatePath("/dashboard");
-  return { ok: true, message: "Visit requested. You'll get a confirmation once the owner accepts." };
+  return { ok: true, message: t("msg.visitOk") };
 }
 
 export async function tenantQuoteAction(id: string, status: "accepted" | "rejected" | "withdrawn" | "negotiating", counter?: number) {

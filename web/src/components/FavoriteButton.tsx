@@ -3,15 +3,17 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { toggleFavorite } from "@/app/actions";
+import { useT } from "@/lib/i18n/client";
 
 export function FavoriteButton({ id, initial = false, className = "", dark = false }: { id: string; initial?: boolean; className?: string; dark?: boolean }) {
   const [saved, setSaved] = useState(initial);
+  const { t } = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   return (
     <button
       type="button"
-      aria-label={saved ? "Remove from saved" : "Save space"}
+      aria-label={saved ? t("fav.remove") : t("fav.save")}
       aria-pressed={saved}
       disabled={pending}
       onClick={(e) => {

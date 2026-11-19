@@ -6,10 +6,12 @@ import { MICRO_MARKETS, STORAGE_TYPES } from "@/lib/data";
 import { MobileSearch } from "./MobileSearch";
 import { Calendar, addDays, prettyDate } from "./Calendar";
 import { buildSearchUrl, type SearchBase } from "@/lib/searchParams";
+import { useT } from "@/lib/i18n/client";
+import { DATE_LOCALE, TYPE_KEY, type Key } from "@/lib/i18n";
 
 const QUICK = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
 const SIZES = [2000, 5000, 10000, 25000, 50000, 100000];
-const WHEN: [string, number | null][] = [["Immediately", 0], ["In 1 month", 30], ["In 3 months", 90], ["Any time", null]];
+const WHEN: [Key, number | null][] = [["s.immediately", 0], ["s.in1", 30], ["s.in3", 90], ["s.anyTime", null]];
 const k = (n: number) => (n >= 1000 ? `${n / 1000}K` : String(n));
 
 type Panel = "where" | "type" | "size" | "when" | null;
@@ -21,6 +23,7 @@ type Panel = "where" | "type" | "size" | "when" | null;
  */
 export function HeroSearch({ count, base, note }: { count: number; base?: SearchBase; note?: string }) {
   const router = useRouter();
+  const { t, lang } = useT();
   const root = useRef<HTMLDivElement>(null);
   const whereInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState<Panel>(null);
@@ -58,10 +61,10 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
       <form onSubmit={(e) => { e.preventDefault(); submit(); }}
         className="relative z-30 flex flex-col gap-2 rounded-[1.75rem] bg-white p-2 shadow-[0_24px_60px_-28px_rgb(3_25_91/0.45)] ring-1 ring-black/5 xl:flex-row xl:items-center xl:rounded-full">
         {/* 1. Lease / Flex */}
-        <div role="tablist" aria-label="What do you need?" className="grid shrink-0 grid-cols-2 gap-1 rounded-full bg-surface p-1 text-sm font-bold">
-          {([["lease", "Lease"], ["flex", "Flex"]] as const).map(([v, label]) => (
+        <div role="tablist" aria-label={t("s.whatNeed")} className="grid shrink-0 grid-cols-2 gap-1 rounded-full bg-surface p-1 text-sm font-bold">
+          {([["lease", t("s.lease")], ["flex", t("s.flex")]] as const).map(([v, label]) => (
             <button key={v} type="button" role="tab" aria-selected={mode === v} onClick={() => setMode(v)}
-              title={v === "lease" ? "Long-term lease (1 year+)" : "Short-term storage, 1–6 months"}
+              title={v === "lease" ? t("s.leaseTitle") : t("s.flexTitle")}
               className={`rounded-full px-5 py-2.5 transition ${mode === v ? "bg-navy text-white shadow" : "text-muted hover:text-ink"}`}>
               {label}
             </button>
@@ -70,7 +73,7 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
 
         <div className="grid min-w-0 flex-1 grid-cols-1 gap-1 sm:grid-cols-3 xl:flex xl:items-center">
           {/* 2. Where */}
-          <Field icon={MapPin} tint="bg-brand/10 text-brand" label="Location" active={open === "where"} className="sm:col-span-3 xl:flex-[1.3]"
+          <Field icon={MapPin} tint="bg-brand/10 text-brand" label={t("s.location")} active={open === "where"} className="sm:col-span-3 xl:flex-[1.3]"
             onActivate={() => { setOpen("where"); whereInput.current?.focus(); }}>
             <input ref={whereInput} value={place} autoComplete="off"
               role="combobox" aria-expanded={open === "where"} aria-controls="where-list" aria-autocomplete="list"
@@ -81,22 +84,22 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
                 if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
                 if (e.key === "Enter" && open === "where" && matches[active]) { e.preventDefault(); pickPlace(matches[active]); }
               }}
-              placeholder="Chakan, Talegaon, Bhosari…"
+              placeholder={t("s.placeholder")}
               className="w-full bg-transparent text-[15px] font-bold text-ink outline-none placeholder:font-semibold placeholder:text-muted/60" />
             {place && (
-              <button type="button" onClick={(e) => { e.stopPropagation(); setPlace(""); whereInput.current?.focus(); }} aria-label="Clear location"
+              <button type="button" onClick={(e) => { e.stopPropagation(); setPlace(""); whereInput.current?.focus(); }} aria-label={t("s.clearLocation")}
                 className="grid size-7 shrink-0 place-items-center rounded-full text-muted hover:bg-line"><X className="size-3.5" /></button>
             )}
             {open === "where" && (
               <Pop className="w-[min(24rem,90vw)]">
-                <p className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted">{place.trim() ? "Matching areas" : "Popular industrial areas"}</p>
+                <p className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted">{place.trim() ? t("s.matching") : t("s.popularAreas")}</p>
                 <ul id="where-list" role="listbox">
                   {matches.map((m, i) => (
                     <li key={m} role="option" aria-selected={i === active}>
                       <button type="button" onMouseEnter={() => setActive(i)} onClick={() => pickPlace(m)}
                         className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${i === active ? "bg-surface" : ""}`}>
                         <span className="tile-icon size-9 bg-brand/10 text-brand"><MapPin className="size-4" /></span>
-                        <span className="flex-1"><b className="block text-sm">{m}</b><span className="text-xs text-muted">Pune, Maharashtra</span></span>
+                        <span className="flex-1"><b className="block text-sm">{m}</b><span className="text-xs text-muted">{t("s.region")}</span></span>
                         {place === m && <Check className="size-4 text-brand" />}
                       </button>
                     </li>
@@ -104,7 +107,7 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
                   {!matches.length && (
                     <li><button type="button" onClick={() => setOpen("type")} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-surface">
                       <span className="tile-icon size-9 bg-surface text-muted"><Search className="size-4" /></span>
-                      <span className="text-sm">Search for <b>“{place}”</b></span>
+                      <span className="text-sm">{t("s.searchFor", { q: place })}</span>
                     </button></li>
                   )}
                 </ul>
@@ -114,22 +117,22 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
 
           <Divider />
           {/* 3. What */}
-          <Field icon={Layers} tint="bg-amber/15 text-amber" label="Storage type" button active={open === "type"} onActivate={() => setOpen(open === "type" ? null : "type")}>
+          <Field icon={Layers} tint="bg-amber/15 text-amber" label={t("s.type")} button active={open === "type"} onActivate={() => setOpen(open === "type" ? null : "type")}>
             <span className="flex items-center justify-between gap-1">
-              <span className="truncate text-[15px] font-bold text-ink">{typeInfo?.short ?? "Any type"}</span>
+              <span className="truncate text-[15px] font-bold text-ink">{typeInfo ? t(TYPE_KEY[typeInfo.name]) : t("s.anyType")}</span>
               <ChevronDown className={`size-4 shrink-0 text-muted transition ${open === "type" ? "rotate-180" : ""}`} />
             </span>
             {open === "type" && (
               <Pop className="w-[min(30rem,90vw)]">
-                <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted">What will you store?</p>
+                <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted">{t("s.whatStore")}</p>
                 <div className="grid grid-cols-3 gap-2">
-                  {[{ name: "", short: "Any type", icon: Sparkles, tint: "bg-navy/10 text-navy" }, ...STORAGE_TYPES].map((t) => {
-                    const on = type === t.name;
+                  {[{ name: "", short: "Any type", icon: Sparkles, tint: "bg-navy/10 text-navy" }, ...STORAGE_TYPES].map((ty) => {
+                    const on = type === ty.name;
                     return (
-                      <button key={t.short} type="button" aria-pressed={on} onClick={() => { setType(t.name); setOpen("size"); }}
+                      <button key={ty.short} type="button" aria-pressed={on} onClick={() => { setType(ty.name); setOpen("size"); }}
                         className={`flex items-center gap-2.5 rounded-2xl border-2 p-2.5 text-left transition ${on ? "border-navy bg-navy/5" : "border-transparent hover:bg-surface"}`}>
-                        <span className={`tile-icon size-9 shrink-0 ${t.tint}`}><t.icon className="size-4" /></span>
-                        <span className="text-[13px] font-bold leading-tight">{t.short}</span>
+                        <span className={`tile-icon size-9 shrink-0 ${ty.tint}`}><ty.icon className="size-4" /></span>
+                        <span className="text-[13px] font-bold leading-tight">{ty.name ? t(TYPE_KEY[ty.name]) : t("type.any")}</span>
                       </button>
                     );
                   })}
@@ -140,14 +143,14 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
 
           <Divider />
           {/* 4. How much */}
-          <Field icon={Ruler} tint="bg-coral/10 text-coral" label="Space needed (sq ft)" active={open === "size"} onActivate={() => setOpen("size")}>
+          <Field icon={Ruler} tint="bg-coral/10 text-coral" label={t("s.space")} active={open === "size"} onActivate={() => setOpen("size")}>
             <input type="number" min={100} step={100} inputMode="numeric" value={area}
               onFocus={() => setOpen("size")} onChange={(e) => setArea(e.target.value)}
               placeholder={mode === "flex" ? "2,000" : "20,000"}
               className="w-full bg-transparent text-[15px] font-bold text-ink outline-none [appearance:textfield] placeholder:font-semibold placeholder:text-muted/60 [&::-webkit-inner-spin-button]:appearance-none" />
             {open === "size" && (
               <Pop className="w-72">
-                <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted">At least</p>
+                <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted">{t("s.atLeast")}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {SIZES.map((s) => {
                     const on = Number(area) === s;
@@ -159,30 +162,30 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
                     );
                   })}
                 </div>
-                <p className="mt-3 px-1 text-xs text-muted">Or type an exact size in the box.</p>
-                {area && <button type="button" onClick={() => setArea("")} className="mt-2 px-1 text-xs font-bold text-brand">Clear size</button>}
+                <p className="mt-3 px-1 text-xs text-muted">{t("s.exactHint")}</p>
+                {area && <button type="button" onClick={() => setArea("")} className="mt-2 px-1 text-xs font-bold text-brand">{t("s.clearSize")}</button>}
               </Pop>
             )}
           </Field>
 
           <Divider />
           {/* 5. When */}
-          <Field icon={CalendarDays} tint="bg-mint/10 text-mint" label="Move-in by" button active={open === "when"} className="xl:flex-[1.15]"
+          <Field icon={CalendarDays} tint="bg-mint/10 text-mint" label={t("s.moveIn")} button active={open === "when"} className="xl:flex-[1.15]"
             onActivate={() => setOpen(open === "when" ? null : "when")}>
             <span className="flex items-center justify-between gap-1">
-              <span className={`truncate text-[15px] font-bold ${from ? "text-ink" : "text-muted/60"}`}>{from ? prettyDate(from) : "Any time"}</span>
+              <span className={`truncate text-[15px] font-bold ${from ? "text-ink" : "text-muted/60"}`}>{from ? prettyDate(from, DATE_LOCALE[lang]) : t("s.anyTime")}</span>
               <ChevronDown className={`size-4 shrink-0 text-muted transition ${open === "when" ? "rotate-180" : ""}`} />
             </span>
             {open === "when" && (
               <Pop className="w-80" align="right">
                 <div className="grid grid-cols-2 gap-2">
-                  {WHEN.map(([label, days]) => {
+                  {WHEN.map(([key, days]) => {
                     const v = days == null ? "" : addDays(days);
                     const on = from === v && (days != null || !from);
                     return (
-                      <button key={label} type="button" aria-pressed={on} onClick={() => { setFrom(v); setOpen(null); }}
+                      <button key={key} type="button" aria-pressed={on} onClick={() => { setFrom(v); setOpen(null); }}
                         className={`rounded-full border-2 py-2 text-sm font-bold transition ${on ? "border-navy bg-navy text-white" : "border-line hover:border-sky"}`}>
-                        {label}
+                        {t(key)}
                       </button>
                     );
                   })}
@@ -195,14 +198,14 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
         </div>
 
         <button className="btn btn-primary btn-arrow shrink-0 !justify-between !py-2 !pl-6 text-base xl:!justify-center">
-          <span className="flex items-center gap-2"><Search className="size-4" /> Search</span>
+          <span className="flex items-center gap-2"><Search className="size-4" /> {t("s.search")}</span>
           <span className="bubble"><ArrowRight className="size-4" /></span>
         </button>
       </form>
 
       {/* Popular locations */}
       <div className="no-scrollbar mt-3 flex items-center gap-2 overflow-x-auto px-1 text-sm">
-        <span className="shrink-0 font-semibold text-muted">Popular:</span>
+        <span className="shrink-0 font-semibold text-muted">{t("s.popular")}</span>
         {QUICK.map((m) => (
           <button key={m} type="button" onClick={() => setPlace(m)}
             className={`shrink-0 rounded-full px-3 py-1.5 font-bold transition ${place === m ? "bg-lime text-ink" : "bg-white text-muted ring-1 ring-line hover:text-ink"}`}>
@@ -210,7 +213,7 @@ export function HeroSearch({ count, base, note }: { count: number; base?: Search
           </button>
         ))}
         <span className="ml-auto hidden shrink-0 font-semibold text-muted sm:block">
-          {note ?? (mode === "flex" ? "Flex: short-term, by the pallet or sq ft" : `${count} verified spaces live`)}
+          {note ?? (mode === "flex" ? t("s.flexNote") : t("s.liveCount", { n: count }))}
         </span>
       </div>
     </div>

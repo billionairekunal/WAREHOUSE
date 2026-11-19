@@ -1,14 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { T } from "@/lib/i18n";
 
 export type Alert = { id: string; text: string; sub: string; href: string; kind: "quote" | "visit" };
 export type NavData = { saved: number; alerts: Alert[]; pendingApprovals: number };
 
 type Row = { id: string; status: string; tenant_company?: string | null; area_sqft?: number; rent_psf?: number | null; scheduled_at?: string; listing: { name: string } | null };
 const nameOf = (r: Row) => r.listing?.name ?? "a listing";
-const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
+const when = (iso: string, locale: string) => new Date(iso).toLocaleString(locale, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
 
 /** Counts and actionable items for the header. Only items that need the user's attention count as alerts. */
-export async function loadNav(supabase: SupabaseClient, userId: string, role: string): Promise<NavData> {
+export async function loadNav(supabase: SupabaseClient, userId: string, role: string, t: T, locale: string): Promise<NavData> {
   const owner = role === "owner" || role === "admin";
   const [saved, myQuotes, myVisits, inQuotes, inVisits, approvals] = await Promise.all([
     supabase.from("favorites").select("listing_id", { count: "exact", head: true }).eq("user_id", userId),
@@ -24,20 +25,20 @@ export async function loadNav(supabase: SupabaseClient, userId: string, role: st
   const alerts: Alert[] = [
     ...rows(inQuotes).map((q) => ({
       id: q.id, kind: "quote" as const, href: "/dashboard?tab=requests",
-      text: q.status === "negotiating" ? `Counter-offer from ${q.tenant_company ?? "a company"}` : `Quote request from ${q.tenant_company ?? "a company"}`,
+      text: t(q.status === "negotiating" ? "alert.counter" : "alert.quoteRequest", { c: q.tenant_company ?? t("alert.aCompany") }),
       sub: `${nameOf(q)} · ${q.area_sqft?.toLocaleString("en-IN")} sq ft`,
     })),
     ...rows(inVisits).map((v) => ({
       id: v.id, kind: "visit" as const, href: "/dashboard?tab=visits",
-      text: `Visit request from ${v.tenant_company ?? "a company"}`, sub: `${nameOf(v)} · ${when(v.scheduled_at!)}`,
+      text: t("alert.visitRequest", { c: v.tenant_company ?? t("alert.aCompany") }), sub: `${nameOf(v)} · ${when(v.scheduled_at!, locale)}`,
     })),
     ...rows(myQuotes).map((q) => ({
       id: q.id, kind: "quote" as const, href: "/dashboard?tab=quotes",
-      text: "New quote received", sub: `${nameOf(q)} · ₹${q.rent_psf}/sq ft`,
+      text: t("alert.quoteReceived"), sub: `${nameOf(q)} · ₹${q.rent_psf}/sq ft`,
     })),
     ...rows(myVisits).map((v) => ({
       id: v.id, kind: "visit" as const, href: "/dashboard?tab=visits",
-      text: "Site visit confirmed", sub: `${nameOf(v)} · ${when(v.scheduled_at!)}`,
+      text: t("alert.visitConfirmed"), sub: `${nameOf(v)} · ${when(v.scheduled_at!, locale)}`,
     })),
   ];
 

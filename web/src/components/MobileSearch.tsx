@@ -5,10 +5,12 @@ import { ArrowLeft, CalendarDays, Check, LayoutGrid, MapPin, Ruler, Search, Slid
 import { MICRO_MARKETS, STORAGE_TYPES } from "@/lib/data";
 import { buildSearchUrl, type SearchBase } from "@/lib/searchParams";
 import { Calendar, addDays, prettyDate } from "./Calendar";
+import { useT } from "@/lib/i18n/client";
+import { DATE_LOCALE, TYPE_KEY, type Key } from "@/lib/i18n";
 
 const POPULAR = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
 const SIZES = [2000, 5000, 10000, 25000, 50000];
-const WHEN: [string, number | null][] = [["Immediately", 0], ["Within 1 month", 30], ["Within 3 months", 90], ["Flexible", null]];
+const WHEN: [Key, number | null][] = [["s.immediately", 0], ["ms.within1", 30], ["ms.within3", 90], ["ms.flexible", null]];
 
 type Step = "where" | "what" | "size" | "when";
 const fmt = (n: number) => (n >= 1000 ? `${n / 1000}K` : String(n));
@@ -17,6 +19,8 @@ const inDays = addDays;
 /** Phone search: a compact pill that opens a full-screen, step-by-step search sheet (Airbnb-style). */
 export function MobileSearch({ count, base }: { count: number; base?: SearchBase }) {
   const router = useRouter();
+  const { t, lang } = useT();
+  const locale = DATE_LOCALE[lang];
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("where");
   const [mode, setMode] = useState<"lease" | "flex">(base?.flex ? "flex" : "lease");
@@ -24,7 +28,7 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
   const [type, setType] = useState(base?.type ?? "");
   const [area, setArea] = useState<number | "">(base?.area ? Number(base.area) || "" : "");
   const [when, setWhen] = useState<{ label: string; date: string }>(base?.from
-    ? { label: prettyDate(base.from), date: base.from }
+    ? { label: prettyDate(base.from, DATE_LOCALE[lang]), date: base.from }
     : { label: "", date: "" });
 
   // after the user types an exact size and pauses, move on to the move-in date
@@ -51,8 +55,8 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
     router.push(buildSearchUrl(base, { q: overridePlace ?? place, type, area: area || undefined, from: when.date, flex: mode === "flex" }), { scroll: false });
   };
   const clear = () => { setPlace(""); setType(""); setArea(""); setWhen({ label: "", date: "" }); setStep("where"); };
-  const typeShort = STORAGE_TYPES.find((t) => t.name === type)?.short;
-  const summary = [typeShort ?? "Any type", area ? `${fmt(area)}+ sq ft` : "Any size", when.label || "Any time"].join(" · ");
+  const typeShort = type && TYPE_KEY[type] ? t(TYPE_KEY[type]) : undefined;
+  const summary = [typeShort ?? t("s.anyType"), area ? t("ms.sqftPlus", { n: fmt(area) }) : t("ms.anySize"), when.label || t("s.anyTime")].join(" · ");
 
   return (
     <div className="sm:hidden">
@@ -61,8 +65,8 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
         className="flex w-full items-center gap-3 rounded-full bg-white p-2 pl-3 text-left shadow-[0_18px_40px_-18px_rgb(3_25_91/0.45)] ring-1 ring-black/5 active:scale-[0.99]">
         <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-sky to-royal text-white"><Search className="size-5" /></span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-extrabold">{place || "Where do you need space?"}</span>
-          <span className="block truncate text-xs font-semibold text-muted">{mode === "flex" ? "Flex · " : ""}{summary}</span>
+          <span className="block truncate text-[15px] font-extrabold">{place || t("ms.where")}</span>
+          <span className="block truncate text-xs font-semibold text-muted">{mode === "flex" ? `${t("s.flex")} · ` : ""}{summary}</span>
         </span>
         <span className="grid size-11 shrink-0 place-items-center rounded-full border border-line text-ink"><SlidersHorizontal className="size-[18px]" /></span>
       </button>
@@ -77,11 +81,11 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
 
       {/* ---------- Full-screen sheet ---------- */}
       {open && (
-        <div role="dialog" aria-modal="true" aria-label="Search warehouses" className="sheet-in fixed inset-0 z-[70] flex flex-col bg-bg">
+        <div role="dialog" aria-modal="true" aria-label={t("s.search")} className="sheet-in fixed inset-0 z-[70] flex flex-col bg-bg">
           <div className="flex items-center justify-between px-4 pb-3 pt-4">
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close search" className="grid size-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-line"><ArrowLeft className="size-5" /></button>
-            <div role="tablist" aria-label="What do you need?" className="grid grid-cols-2 gap-1 rounded-full bg-white p-1 text-sm font-bold ring-1 ring-line">
-              {([["lease", "Lease"], ["flex", "Flex storage"]] as const).map(([v, label]) => (
+            <button type="button" onClick={() => setOpen(false)} aria-label={t("ms.close")} className="grid size-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-line"><ArrowLeft className="size-5" /></button>
+            <div role="tablist" aria-label={t("s.whatNeed")} className="grid grid-cols-2 gap-1 rounded-full bg-white p-1 text-sm font-bold ring-1 ring-line">
+              {([["lease", t("s.lease")], ["flex", t("nav.flex")]] as const).map(([v, label]) => (
                 <button key={v} type="button" role="tab" aria-selected={mode === v} onClick={() => setMode(v)}
                   className={`rounded-full px-4 py-2 transition ${mode === v ? "bg-navy text-white" : "text-muted"}`}>{label}</button>
               ))}
@@ -91,15 +95,15 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
 
           <div className="flex-1 space-y-3 overflow-y-auto px-4 pb-6">
             {/* WHERE */}
-            <Section open={step === "where"} onOpen={() => setStep("where")} title="Where?" value={place || "Anywhere in Pune"} icon={MapPin} tint="bg-brand/10 text-brand">
+            <Section open={step === "where"} onOpen={() => setStep("where")} title={t("ms.whereQ")} value={place || t("ms.anywhere")} icon={MapPin} tint="bg-brand/10 text-brand">
               <label className="flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-3.5 focus-within:border-sky focus-within:bg-white">
                 <Search className="size-5 text-muted" />
                 <input autoFocus value={place} onChange={(e) => setPlace(e.target.value)} enterKeyHint="next"
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setStep("what"); } }}
-                  placeholder="Area, MIDC or warehouse name" className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none placeholder:text-muted" />
-                {place && <button type="button" onClick={() => setPlace("")} aria-label="Clear location"><X className="size-4 text-muted" /></button>}
+                  placeholder={t("ms.wherePh")} className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none placeholder:text-muted" />
+                {place && <button type="button" onClick={() => setPlace("")} aria-label={t("s.clearLocation")}><X className="size-4 text-muted" /></button>}
               </label>
-              <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wider text-muted">Popular in Pune</p>
+              <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wider text-muted">{t("ms.popularPune")}</p>
               <ul className="divide-y divide-line">
                 {(place ? MICRO_MARKETS.filter((m) => m.toLowerCase().includes(place.toLowerCase())) : MICRO_MARKETS.slice(0, 6)).slice(0, 6).map((m) => (
                   <li key={m}>
@@ -114,25 +118,25 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
             </Section>
 
             {/* WHAT */}
-            <Section open={step === "what"} onOpen={() => setStep("what")} title="What kind of storage?" value={typeShort ?? "Any type"} icon={LayoutGrid} tint="bg-amber/15 text-amber">
+            <Section open={step === "what"} onOpen={() => setStep("what")} title={t("ms.whatQ")} value={typeShort ?? t("s.anyType")} icon={LayoutGrid} tint="bg-amber/15 text-amber">
               <div className="grid grid-cols-3 gap-2">
-                <TypeTile active={!type} onClick={() => { setType(""); setStep("size"); }} icon={Sparkles} tint="bg-navy/10 text-navy" label="Any type" />
-                {STORAGE_TYPES.map((t) => (
-                  <TypeTile key={t.name} active={type === t.name} onClick={() => { setType(t.name); setStep("size"); }} icon={t.icon} tint={t.tint} label={t.short} />
+                <TypeTile active={!type} onClick={() => { setType(""); setStep("size"); }} icon={Sparkles} tint="bg-navy/10 text-navy" label={t("type.any")} />
+                {STORAGE_TYPES.map((ty) => (
+                  <TypeTile key={ty.name} active={type === ty.name} onClick={() => { setType(ty.name); setStep("size"); }} icon={ty.icon} tint={ty.tint} label={t(TYPE_KEY[ty.name])} />
                 ))}
               </div>
             </Section>
 
             {/* SIZE */}
-            <Section open={step === "size"} onOpen={() => setStep("size")} title="How much space?" value={area ? `${area.toLocaleString("en-IN")}+ sq ft` : "Any size"} icon={Ruler} tint="bg-coral/10 text-coral">
+            <Section open={step === "size"} onOpen={() => setStep("size")} title={t("ms.sizeQ")} value={area ? t("ms.sqftPlus", { n: area.toLocaleString("en-IN") }) : t("ms.anySize")} icon={Ruler} tint="bg-coral/10 text-coral">
               <div className="flex flex-wrap gap-2">
                 {SIZES.map((s) => (
-                  <Chip key={s} active={area === s} onClick={() => { if (area === s) setArea(""); else { setArea(s); toWhen(); } }}>{fmt(s)}+ sq ft</Chip>
+                  <Chip key={s} active={area === s} onClick={() => { if (area === s) setArea(""); else { setArea(s); toWhen(); } }}>{t("ms.sqftPlus", { n: fmt(s) })}</Chip>
                 ))}
               </div>
               <label className="mt-4 flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-3 focus-within:border-sky focus-within:bg-white">
-                <span className="text-sm font-semibold text-muted">Exact</span>
-                <input type="number" inputMode="numeric" min={100} step={100} value={area} placeholder="e.g. 12,000" enterKeyHint="next"
+                <span className="text-sm font-semibold text-muted">{t("ms.exact")}</span>
+                <input type="number" inputMode="numeric" min={100} step={100} value={area} placeholder={t("ms.sizePh")} enterKeyHint="next"
                   onKeyDown={(e) => { if (e.key === "Enter" && area) { e.preventDefault(); toWhen(); } }}
                   onChange={(e) => {
                     const v = e.target.value ? Number(e.target.value) : "";
@@ -143,32 +147,35 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
                   className="min-w-0 flex-1 bg-transparent text-right text-base font-bold outline-none placeholder:font-medium placeholder:text-muted" />
                 <span className="text-sm font-semibold text-muted">sq ft</span>
               </label>
-              <button type="button" onClick={() => setStep("when")} className="mt-3 w-full rounded-full py-2 text-sm font-bold text-brand">Next: move-in date →</button>
+              <button type="button" onClick={() => setStep("when")} className="mt-3 w-full rounded-full py-2 text-sm font-bold text-brand">{t("ms.nextDate")}</button>
             </Section>
 
             {/* WHEN */}
-            <Section open={step === "when"} onOpen={() => setStep("when")} title="When do you need it?" value={when.label || "Any time"} icon={CalendarDays} tint="bg-mint/10 text-mint">
+            <Section open={step === "when"} onOpen={() => setStep("when")} title={t("ms.whenQ")} value={when.label || t("s.anyTime")} icon={CalendarDays} tint="bg-mint/10 text-mint">
               <div className="grid grid-cols-2 gap-2">
-                {WHEN.map(([label, days]) => (
-                  <Chip key={label} active={when.label === label} block
+                {WHEN.map(([key, days]) => {
+                  const label = t(key);
+                  return (
+                  <Chip key={key} active={when.label === label} block
                     onClick={() => setWhen(when.label === label ? { label: "", date: "" } : { label, date: days == null ? "" : inDays(days) })}>
                     {label}
                   </Chip>
-                ))}
+                  );
+                })}
               </div>
               <div className="mt-4 rounded-2xl border-2 border-line p-3">
-                <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-muted">Or pick a date</p>
-                <Calendar value={when.date && !WHEN.some(([l]) => l === when.label) ? when.date : ""}
-                  onChange={(v) => setWhen({ label: prettyDate(v), date: v })} />
+                <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-muted">{t("ms.pickDate")}</p>
+                <Calendar value={when.date && !WHEN.some(([k]) => t(k) === when.label) ? when.date : ""}
+                  onChange={(v) => setWhen({ label: prettyDate(v, locale), date: v })} />
               </div>
             </Section>
           </div>
 
           {/* Sticky footer */}
           <div className="flex items-center justify-between gap-3 border-t border-line bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-            <button type="button" onClick={clear} className="px-2 py-3 text-sm font-bold text-ink underline underline-offset-4">Clear all</button>
+            <button type="button" onClick={clear} className="px-2 py-3 text-sm font-bold text-ink underline underline-offset-4">{t("ms.clearAll")}</button>
             <button type="button" onClick={() => go()} className="btn btn-primary flex-1 !py-4 text-base">
-              <Search className="size-5" /> Search {mode === "flex" ? "flex storage" : `${count} spaces`}
+              <Search className="size-5" /> {mode === "flex" ? t("ms.searchFlex") : t("ms.searchN", { n: count })}
             </button>
           </div>
         </div>

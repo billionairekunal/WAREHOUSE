@@ -23,9 +23,9 @@
   --color-mint: #12b886;
   --color-bg: #eef2fb;
 
-  --font-sans: var(--font-body);
-  --font-display: var(--font-display);
-  --font-serif: var(--font-serif-display);
+  --font-sans: var(--font-body), var(--font-deva);
+  --font-display: var(--font-display), var(--font-deva);
+  --font-serif: var(--font-serif-display), var(--font-deva);
 
   --radius-card: 1.75rem;
   --shadow-soft: 0 10px 40px -12px rgb(11 44 177 / 0.18);
@@ -50,7 +50,7 @@ body {
     radial-gradient(900px 500px at -10% 10%, rgb(212 245 90 / 0.14), transparent 60%),
     var(--color-bg);
   color: var(--color-ink);
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-body), var(--font-deva), system-ui, sans-serif;
   font-feature-settings: "cv11", "ss01";
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -59,7 +59,7 @@ body {
 /* Big, tight display headings everywhere (base layer so utilities can override) */
 @layer base {
 h1, h2, h3, .display {
-  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-family: var(--font-display), var(--font-deva), var(--font-body), sans-serif;
   letter-spacing: -0.035em;
   line-height: 1.05;
   text-wrap: balance;
