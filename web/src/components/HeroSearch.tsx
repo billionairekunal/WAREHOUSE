@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowRight, CalendarDays, ChevronDown, Layers, MapPin, Ruler, Search } from "lucide-react";
 import { MICRO_MARKETS, STORAGE_TYPES } from "@/lib/data";
+import { MobileSearch } from "./MobileSearch";
 
 const QUICK = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
 
@@ -18,7 +19,9 @@ export function HeroSearch({ count }: { count: number }) {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div>
+    <>
+    <MobileSearch count={count} />
+    <div className="hidden sm:block">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -97,6 +100,7 @@ export function HeroSearch({ count }: { count: number }) {
         </span>
       </div>
     </div>
+    </>
   );
 }
 

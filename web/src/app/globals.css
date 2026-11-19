@@ -237,5 +237,7 @@ p { text-wrap: pretty; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .rise { animation: rise 0.6s cubic-bezier(.2,.7,.2,1) both; }
-@media (prefers-reduced-motion: reduce) { .rise { animation: none; } html { scroll-behavior: auto; } }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+.sheet-in { animation: sheet-in 0.32s cubic-bezier(.2,.8,.2,1) both; }
+@media (prefers-reduced-motion: reduce) { .rise, .sheet-in { animation: none; } html { scroll-behavior: auto; } }
 .leaflet-tile-pane { filter: grayscale(0.75) brightness(1.04) contrast(0.95) hue-rotate(10deg); }
