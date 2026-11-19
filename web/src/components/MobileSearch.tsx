@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, LayoutGrid, MapPin, Ruler, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { MICRO_MARKETS, STORAGE_TYPES } from "@/lib/data";
 import { buildSearchUrl, type SearchBase } from "@/lib/searchParams";
+import { Calendar, addDays, prettyDate } from "./Calendar";
 
 const POPULAR = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
 const SIZES = [2000, 5000, 10000, 25000, 50000];
@@ -11,7 +12,7 @@ const WHEN: [string, number | null][] = [["Immediately", 0], ["Within 1 month", 
 
 type Step = "where" | "what" | "size" | "when";
 const fmt = (n: number) => (n >= 1000 ? `${n / 1000}K` : String(n));
-const inDays = (d: number) => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10);
+const inDays = addDays;
 
 /** Phone search: a compact pill that opens a full-screen, step-by-step search sheet (Airbnb-style). */
 export function MobileSearch({ count, base }: { count: number; base?: SearchBase }) {
@@ -23,7 +24,7 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
   const [type, setType] = useState(base?.type ?? "");
   const [area, setArea] = useState<number | "">(base?.area ? Number(base.area) || "" : "");
   const [when, setWhen] = useState<{ label: string; date: string }>(base?.from
-    ? { label: new Date(base.from).toLocaleDateString("en-IN", { day: "numeric", month: "short" }), date: base.from }
+    ? { label: prettyDate(base.from), date: base.from }
     : { label: "", date: "" });
 
   // lock page scroll and support the Escape key while the sheet is open
@@ -140,15 +141,11 @@ export function MobileSearch({ count, base }: { count: number; base?: SearchBase
                   </Chip>
                 ))}
               </div>
-              <label className="mt-4 flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-3 focus-within:border-sky focus-within:bg-white">
-                <CalendarDays className="size-5 text-muted" />
-                <span className="text-sm font-semibold text-muted">Pick a date</span>
-                <input type="date" min={inDays(0)} value={when.date && !WHEN.some(([l]) => l === when.label) ? when.date : ""}
-                  onChange={(e) => setWhen(e.target.value
-                    ? { label: new Date(e.target.value).toLocaleDateString("en-IN", { day: "numeric", month: "short" }), date: e.target.value }
-                    : { label: "", date: "" })}
-                  className="min-w-0 flex-1 bg-transparent text-right text-base font-bold outline-none [color-scheme:light]" />
-              </label>
+              <div className="mt-4 rounded-2xl border-2 border-line p-3">
+                <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-muted">Or pick a date</p>
+                <Calendar value={when.date && !WHEN.some(([l]) => l === when.label) ? when.date : ""}
+                  onChange={(v) => setWhen({ label: prettyDate(v), date: v })} />
+              </div>
             </Section>
           </div>
 
