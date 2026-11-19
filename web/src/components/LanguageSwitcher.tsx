@@ -19,7 +19,7 @@ export function LanguageSwitcher() {
       <summary aria-label={t("nav.language")} title={t("nav.language")}
         className="flex h-10 cursor-pointer list-none items-center gap-1 rounded-full px-2.5 text-sm font-bold text-ink hover:bg-white [&::-webkit-details-marker]:hidden">
         {pending ? <Loader2 className="size-[18px] animate-spin" /> : <Languages className="size-[18px]" />}
-        <span>{SHORT[lang]}</span>
+        <span className="hidden sm:inline">{SHORT[lang]}</span>
       </summary>
       <div className="card absolute right-0 mt-3 w-48 p-2 text-sm">
         <p className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted">{t("nav.language")}</p>
