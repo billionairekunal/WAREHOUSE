@@ -5,7 +5,7 @@ import { getSession } from "@/lib/supabase/server";
 import { CARD_FIELDS, type CardListing } from "@/lib/data";
 import { ListingCard } from "@/components/ListingCard";
 import { Filters } from "./Filters";
-import { ListSearch } from "./ListSearch";
+import { HeroSearch } from "@/components/HeroSearch";
 import { ResultsLayout } from "./ResultsLayout";
 
 export const metadata: Metadata = { title: "Find warehouse space" };
@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: "Find warehouse space" };
 export default async function SearchPage({ searchParams }: PageProps<"/search">) {
   const sp = await searchParams;
   const p = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
+  const base = Object.fromEntries(Object.entries(sp).filter(([, v]) => typeof v === "string")) as Record<string, string>;
   const { supabase, user } = await getSession();
 
   let q = supabase.from("listings").select(CARD_FIELDS).eq("status", "live");
@@ -56,7 +57,10 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
         </h1>
         <p className="mt-1 text-sm text-muted sm:text-base">Compare verified spaces by location, storage type, specs and price.</p>
       </div>
-      <div className="mb-4"><ListSearch /></div>
+      <div className="mb-5">
+        <HeroSearch key={JSON.stringify(base)} count={listings.length} base={base}
+          note={`${listings.length} ${listings.length === 1 ? "space" : "spaces"} match`} />
+      </div>
       <Filters count={listings.length} />
       <ResultsLayout pins={pins}>
         {listings.length ? (

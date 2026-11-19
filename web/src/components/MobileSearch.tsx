@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, LayoutGrid, MapPin, Ruler, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { MICRO_MARKETS, STORAGE_TYPES } from "@/lib/data";
+import { buildSearchUrl, type SearchBase } from "@/lib/searchParams";
 
 const POPULAR = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
 const SIZES = [2000, 5000, 10000, 25000, 50000];
@@ -13,15 +14,17 @@ const fmt = (n: number) => (n >= 1000 ? `${n / 1000}K` : String(n));
 const inDays = (d: number) => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10);
 
 /** Phone search: a compact pill that opens a full-screen, step-by-step search sheet (Airbnb-style). */
-export function MobileSearch({ count }: { count: number }) {
+export function MobileSearch({ count, base }: { count: number; base?: SearchBase }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("where");
-  const [mode, setMode] = useState<"lease" | "flex">("lease");
-  const [place, setPlace] = useState("");
-  const [type, setType] = useState("");
-  const [area, setArea] = useState<number | "">("");
-  const [when, setWhen] = useState<{ label: string; date: string }>({ label: "", date: "" });
+  const [mode, setMode] = useState<"lease" | "flex">(base?.flex ? "flex" : "lease");
+  const [place, setPlace] = useState(base?.q ?? base?.market ?? "");
+  const [type, setType] = useState(base?.type ?? "");
+  const [area, setArea] = useState<number | "">(base?.area ? Number(base.area) || "" : "");
+  const [when, setWhen] = useState<{ label: string; date: string }>(base?.from
+    ? { label: new Date(base.from).toLocaleDateString("en-IN", { day: "numeric", month: "short" }), date: base.from }
+    : { label: "", date: "" });
 
   // lock page scroll and support the Escape key while the sheet is open
   useEffect(() => {
@@ -34,14 +37,8 @@ export function MobileSearch({ count }: { count: number }) {
   }, [open]);
 
   const go = (overridePlace?: string) => {
-    const q = new URLSearchParams();
-    const p = (overridePlace ?? place).trim();
-    if (p) q.set("q", p);
-    if (type) q.set("type", type);
-    if (area) q.set("area", String(area));
-    if (when.date) q.set("from", when.date);
-    if (mode === "flex") q.set("flex", "1");
-    router.push(`/search?${q}`);
+    setOpen(false);
+    router.push(buildSearchUrl(base, { q: overridePlace ?? place, type, area: area || undefined, from: when.date, flex: mode === "flex" }), { scroll: false });
   };
   const clear = () => { setPlace(""); setType(""); setArea(""); setWhen({ label: "", date: "" }); setStep("where"); };
   const typeShort = STORAGE_TYPES.find((t) => t.name === type)?.short;

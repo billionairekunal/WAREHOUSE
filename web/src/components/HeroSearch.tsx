@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowRight, CalendarDays, ChevronDown, Layers, MapPin, Ruler, Search } from "lucide-react";
 import { MICRO_MARKETS, STORAGE_TYPES } from "@/lib/data";
 import { MobileSearch } from "./MobileSearch";
+import { buildSearchUrl, type SearchBase } from "@/lib/searchParams";
 
 const QUICK = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
 
@@ -12,23 +13,22 @@ const QUICK = ["Chakan", "Talegaon", "Bhosari", "Ranjangaon", "Mahalunge"];
  * 1. Lease vs Flex  2. Where  3. What kind of storage  4. How much space  5. When they need it.
  * Budget, height, docks etc. stay on the results page as filters.
  */
-export function HeroSearch({ count }: { count: number }) {
+export function HeroSearch({ count, base, note }: { count: number; base?: SearchBase; note?: string }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"lease" | "flex">("lease");
-  const [place, setPlace] = useState("");
+  const [mode, setMode] = useState<"lease" | "flex">(base?.flex ? "flex" : "lease");
+  const [place, setPlace] = useState(base?.q ?? base?.market ?? "");
   const today = new Date().toISOString().slice(0, 10);
 
   return (
     <>
-    <MobileSearch count={count} />
+    <MobileSearch count={count} base={base} />
     <div className="hidden sm:block">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          const q = new URLSearchParams();
-          for (const [k, v] of new FormData(e.currentTarget)) if (String(v).trim()) q.set(k, String(v).trim());
-          if (mode === "flex") q.set("flex", "1");
-          router.push(`/search?${q}`);
+          const fd = new FormData(e.currentTarget);
+          const val = (k: string) => String(fd.get(k) ?? "").trim();
+          router.push(buildSearchUrl(base, { q: val("q"), type: val("type"), area: val("area"), from: val("from"), flex: mode === "flex" }), { scroll: false });
         }}
         className="flex flex-col gap-2 rounded-[1.75rem] bg-white p-2 shadow-[0_24px_60px_-28px_rgb(3_25_91/0.45)] ring-1 ring-black/5 xl:flex-row xl:items-center xl:rounded-full"
       >
@@ -56,7 +56,7 @@ export function HeroSearch({ count }: { count: number }) {
           {/* 3. What */}
           <Field icon={Layers} tint="bg-amber/15 text-amber" label="Storage type">
             <span className="relative block">
-              <select name="type" defaultValue="" className="w-full appearance-none bg-transparent pr-6 text-[15px] font-bold text-ink outline-none">
+              <select name="type" defaultValue={base?.type ?? ""} className="w-full appearance-none bg-transparent pr-6 text-[15px] font-bold text-ink outline-none">
                 <option value="">Any type</option>
                 {STORAGE_TYPES.map((t) => <option key={t.name} value={t.name}>{t.short}</option>)}
               </select>
@@ -67,7 +67,7 @@ export function HeroSearch({ count }: { count: number }) {
           <Divider />
           {/* 4. How much */}
           <Field icon={Ruler} tint="bg-coral/10 text-coral" label="Space needed (sq ft)">
-            <input name="area" type="number" min={100} step={100} inputMode="numeric"
+            <input name="area" type="number" defaultValue={base?.area ?? ""} min={100} step={100} inputMode="numeric"
               placeholder={mode === "flex" ? "2,000" : "20,000"}
               className="w-full bg-transparent text-[15px] font-bold text-ink outline-none placeholder:font-semibold placeholder:text-muted/60" />
           </Field>
@@ -75,7 +75,7 @@ export function HeroSearch({ count }: { count: number }) {
           <Divider />
           {/* 5. When */}
           <Field icon={CalendarDays} tint="bg-mint/10 text-mint" label="Move-in by" className="xl:flex-[1.15]">
-            <input name="from" type="date" min={today} suppressHydrationWarning
+            <input name="from" type="date" min={today} defaultValue={base?.from ?? ""} suppressHydrationWarning
               className="w-full bg-transparent text-[15px] font-bold text-ink outline-none [color-scheme:light]" />
           </Field>
         </div>
@@ -96,7 +96,7 @@ export function HeroSearch({ count }: { count: number }) {
           </button>
         ))}
         <span className="ml-auto hidden shrink-0 font-semibold text-muted sm:block">
-          {mode === "flex" ? "Flex: short-term, by the pallet or sq ft" : `${count} verified spaces live`}
+          {note ?? (mode === "flex" ? "Flex: short-term, by the pallet or sq ft" : `${count} verified spaces live`)}
         </span>
       </div>
     </div>
