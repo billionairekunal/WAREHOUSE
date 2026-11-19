@@ -21,10 +21,10 @@ export async function Header() {
   const initial = (profile?.full_name || user?.email || "?").slice(0, 1).toUpperCase();
 
   const links: [string, string][] = !user
-    ? [["Find space", "/search"], ["Flex storage", "/search?flex=1"], ["Why us", "/#trust"], ["For owners", "/#owners"]]
+    ? [["Find space", "/search"], ["Flex storage", "/search?flex=1"], ["For owners", "/#owners"]]
     : isOwner
-      ? [["Find space", "/search"], ["Why us", "/#trust"], ["My listings", "/dashboard?tab=listings"]]
-      : [["Find space", "/search"], ["Flex storage", "/search?flex=1"], ["Why us", "/#trust"]];
+      ? [["Find space", "/search"], ["My listings", "/dashboard?tab=listings"]]
+      : [["Find space", "/search"], ["Flex storage", "/search?flex=1"]];
 
   const menu: [string, string, typeof Heart][] = isOwner
     ? [["Dashboard", "/dashboard", LayoutDashboard], ["My listings", "/dashboard?tab=listings", Warehouse], ["Quote requests", "/dashboard?tab=requests", FileText],
