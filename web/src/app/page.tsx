@@ -63,15 +63,15 @@ export default async function Home() {
                 </li>
               ))}
             </ul>
-            <dl className="mt-8 grid max-w-md grid-cols-3 divide-x divide-line rounded-[1.5rem] bg-white py-4 shadow-[var(--shadow-soft)] ring-1 ring-line">
+            <dl className="mt-10 flex flex-wrap gap-x-8 gap-y-4">
               {[
                 [s.sqft >= 1000 ? `${Math.round(s.sqft / 1000)}K` : s.sqft, "sq ft available", "text-brand"],
                 [s.verified, "verified spaces", "text-mint"],
                 [s.markets, "micro-markets", "text-coral"],
               ].map(([v, l, c]) => (
-                <div key={l as string} className="px-4 text-center">
-                  <dt className={`display text-3xl font-black ${c}`}>{v}</dt>
-                  <dd className="mt-0.5 text-xs font-semibold text-muted">{l}</dd>
+                <div key={l as string}>
+                  <dt className={`display text-4xl font-black ${c}`}>{v}</dt>
+                  <dd className="text-sm font-semibold text-muted">{l}</dd>
                 </div>
               ))}
             </dl>
