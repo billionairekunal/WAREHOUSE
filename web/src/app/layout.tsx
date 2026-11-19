@@ -3,8 +3,6 @@ import { Inter, Inter_Tight, DM_Serif_Display, Noto_Sans_Devanagari } from "next
 import { getLang } from "@/lib/i18n/server";
 import { messagesFor } from "@/lib/i18n";
 import { LangProvider } from "@/lib/i18n/client";
-import { Header } from "@/components/Header";
-import { MobileNav } from "@/components/MobileNav";
 import { FirebaseInit } from "@/components/FirebaseInit";
 import "./globals.css";
 
@@ -27,9 +25,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang={lang} className={`${body.variable} ${display.variable} ${serif.variable} ${deva.variable}`}>
       <body className="min-h-dvh">
         <LangProvider lang={lang} messages={messagesFor(lang)}>
-        <Header />
         {children}
-        <MobileNav />
         <FirebaseInit />
         </LangProvider>
       </body>

@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useState, useTransition } from "react";
 import { Check, MessageSquareReply, Pause, Play, X } from "lucide-react";
-import { ownerDecline, ownerQuote, reviewListing, setListingStatus, tenantQuoteAction, visitStatus } from "@/app/actions";
+import { ownerDecline, ownerQuote, setListingStatus, tenantQuoteAction, visitStatus } from "@/app/actions";
 
 export function TenantQuoteActions({ id, status, rent }: { id: string; status: string; rent: number | null }) {
   const [pending, start] = useTransition();
@@ -78,14 +78,4 @@ export function ListingToggle({ id, status }: { id: string; status: string }) {
   if (status === "live") return <button disabled={pending} onClick={() => start(() => setListingStatus(id, "paused"))} className="btn btn-ghost !px-3 !py-1.5 text-xs"><Pause className="size-3.5" /> Pause</button>;
   if (status === "paused") return <button disabled={pending} onClick={() => start(() => setListingStatus(id, "live"))} className="btn btn-ghost !px-3 !py-1.5 text-xs"><Play className="size-3.5" /> Resume</button>;
   return null;
-}
-
-export function ReviewButtons({ id }: { id: string }) {
-  const [pending, start] = useTransition();
-  return (
-    <div className="flex gap-2">
-      <button disabled={pending} onClick={() => start(() => reviewListing(id, true))} className="btn btn-primary !py-2 text-xs"><Check className="size-4" /> Approve & verify</button>
-      <button disabled={pending} onClick={() => { const r = prompt("Reason for changes requested?"); if (r) start(() => reviewListing(id, false, r)); }} className="btn btn-ghost !py-2 text-xs">Request changes</button>
-    </div>
-  );
 }

@@ -32,7 +32,7 @@ Security model (row-level security + triggers):
 | `/warehouse/[id]` | Gallery, specs, true-cost calculator, quote and site-visit requests |
 | `/list-space` | 7-step listing wizard with photo upload and map pin |
 | `/dashboard` | Company: quote comparison (accept / counter / reject), visits, saved. Owner: listings, quote requests, visits |
-| `/admin` | Verification queue (approve or request changes) |
+| `/admin` | **Admin console** (separate layout, admins only): Overview, Approvals, Listings, Users, Quotes, Site visits |
 
 ## Firebase (push notifications + Analytics)
 - `NEXT_PUBLIC_FIREBASE_*` vars hold the public web config and the web-push (VAPID) key.

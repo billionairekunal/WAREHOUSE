@@ -58,7 +58,7 @@ export async function Header() {
           ) : (
             <>
               {role === "admin" && (
-                <Link href="/admin" className="btn relative hidden bg-lime !py-2.5 text-ink hover:bg-lime-deep md:inline-flex">
+                <Link href="/admin/approvals" className="btn relative hidden bg-lime !py-2.5 text-ink hover:bg-lime-deep md:inline-flex">
                   <ClipboardCheck className="size-4" /> {t("nav.approve")}
                   {nav!.pendingApprovals > 0 && <span className="grid min-w-5 place-items-center rounded-full bg-navy px-1.5 text-[11px] leading-5 text-white">{nav!.pendingApprovals}</span>}
                 </Link>

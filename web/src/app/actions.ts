@@ -220,15 +220,3 @@ export async function setListingStatus(id: string, status: "paused" | "live" | "
   revalidatePath("/dashboard");
 }
 
-// ---------- admin ----------
-export async function reviewListing(id: string, approve: boolean, reason?: string) {
-  const { supabase } = await requireUser();
-  const { data } = await supabase.from("listings").update(
-    approve ? { status: "live", verified: true, rejection_reason: null } : { status: "rejected", rejection_reason: reason ?? "Needs changes" },
-  ).eq("id", id).select("owner_id, name, status").single();
-  if (data) push(data.owner_id, approve ? "Your listing is live 🎉" : "Changes requested on your listing",
-    approve ? `${data.name} is verified and visible to companies.` : `${data.name}: ${reason ?? "see your dashboard"}`,
-    approve ? `/warehouse/${id}` : "/dashboard?tab=listings");
-  revalidatePath("/admin");
-  revalidatePath("/search");
-}
