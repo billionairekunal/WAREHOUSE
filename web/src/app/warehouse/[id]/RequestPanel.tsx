@@ -5,6 +5,7 @@ import { CalendarClock, CheckCircle2, FileText, Info } from "lucide-react";
 import { requestQuote, requestVisit } from "@/app/actions";
 import { costBreakdown, inr } from "@/lib/data";
 import { useT } from "@/lib/i18n/client";
+import { VisitPicker } from "./VisitPicker";
 
 type L = {
   id: string; rent_psf: number | null; cam_psf: number | null; deposit_months: number | null;
@@ -85,8 +86,7 @@ export function RequestPanel({ l, loggedIn, isOwner }: { l: L; loggedIn: boolean
           ) : (
             <form action={visitAction} className="mt-5 space-y-3">
               <input type="hidden" name="listing_id" value={l.id} />
-              <label className="block"><span className="label">{t("r.when")}</span>
-                <input name="scheduled_at" type="datetime-local" required className="field" /></label>
+              <VisitPicker />
               <label className="block"><span className="label">{t("r.note")}</span>
                 <input name="note" placeholder={t("r.notePh")} className="field" /></label>
               {state && !state.ok && <p className="text-sm font-semibold text-danger">{state.error}</p>}

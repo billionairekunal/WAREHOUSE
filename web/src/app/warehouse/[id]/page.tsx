@@ -174,7 +174,7 @@ export default async function WarehousePage({ params }: PageProps<"/warehouse/[i
             </section>
           </div>
 
-          <aside className="lg:sticky lg:top-24 lg:self-start">
+          <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
             <RequestPanel l={l} loggedIn={!!user} isOwner={user?.id === l.owner_id} />
             <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted"><Warehouse className="size-3.5" /> {t("d.listed", { d: date(l.created_at) })} · <CalendarDays className="size-3.5" /> {t("d.availableOn", { d: date(l.available_from) })}</p>
           </aside>
