@@ -91,6 +91,7 @@ export async function toggleFavorite(listingId: string, saved: boolean): Promise
   const { error } = await q;
   if (error) return { ok: false, error: error.message };
   revalidatePath("/dashboard");
+  revalidatePath("/saved");
   return { ok: true };
 }
 

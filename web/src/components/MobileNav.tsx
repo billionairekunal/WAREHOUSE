@@ -1,29 +1,26 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Suspense } from "react";
-import { Home, Search, PlusCircle, Heart, UserRound } from "lucide-react";
+import { Home, Search, Heart, UserRound } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import type { Key } from "@/lib/i18n";
 
 const items = [
   { href: "/", label: "Home", key: "mnav.home", icon: Home },
   { href: "/search", label: "Explore", key: "mnav.explore", icon: Search },
-  { href: "/list-space", label: "List", key: "mnav.list", icon: PlusCircle },
-  { href: "/dashboard?tab=saved", label: "Saved", key: "mnav.saved", icon: Heart },
+  { href: "/saved", label: "Saved", key: "mnav.saved", icon: Heart },
   { href: "/dashboard", label: "Account", key: "mnav.account", icon: UserRound },
 ];
 
 function Bar() {
   const path = usePathname();
-  const tab = useSearchParams().get("tab");
   const { t } = useT();
   if (path.startsWith("/warehouse/")) return null; // detail page has its own sticky CTA bar
   const isActive = (href: string, label: string) => {
     const base = href.split("?")[0];
     if (base === "/") return path === "/";
-    if (label === "Saved") return path === "/dashboard" && tab === "saved";
-    if (label === "Account") return path.startsWith("/dashboard") && tab !== "saved";
+    if (label === "Account") return path.startsWith("/dashboard") || path === "/login" || path === "/signup";
     return path.startsWith(base);
   };
   return (

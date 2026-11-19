@@ -31,9 +31,9 @@ export async function Header() {
 
   const menu: [string, string, typeof Heart][] = isOwner
     ? [[t("nav.dashboard"), "/dashboard", LayoutDashboard], [t("nav.myListings"), "/dashboard?tab=listings", Warehouse], [t("nav.quoteRequests"), "/dashboard?tab=requests", FileText],
-       [t("nav.siteVisits"), "/dashboard?tab=visits", CalendarClock], [t("nav.saved"), "/dashboard?tab=saved", Heart]]
+       [t("nav.siteVisits"), "/dashboard?tab=visits", CalendarClock], [t("nav.saved"), "/saved", Heart]]
     : [[t("nav.dashboard"), "/dashboard", LayoutDashboard], [t("nav.myQuotes"), "/dashboard?tab=quotes", FileText], [t("nav.siteVisits"), "/dashboard?tab=visits", CalendarClock],
-       [t("nav.saved"), "/dashboard?tab=saved", Heart], [t("nav.listASpace"), "/list-space", Plus]];
+       [t("nav.saved"), "/saved", Heart], [t("nav.listASpace"), "/list-space", Plus]];
 
   return (
     <header className="sticky top-0 z-40 px-4 pt-3 sm:px-6">
@@ -50,7 +50,7 @@ export async function Header() {
           {!user ? (
             <>
               <Link href="/list-space" className="btn btn-ghost hidden !py-2.5 md:inline-flex"><Plus className="size-4" /> {t("nav.listYourSpace")}</Link>
-              <Link href={`/login?next=${encodeURIComponent("/dashboard?tab=saved")}`} aria-label={t("nav.saved")} title={t("nav.saved")}
+              <Link href="/saved" aria-label={t("nav.saved")} title={t("nav.saved")}
                 className="hidden size-10 place-items-center rounded-full hover:bg-white sm:grid"><Heart className="size-5" /></Link>
               <Link href="/login" className="btn hidden !px-4 !py-2.5 text-ink hover:bg-white sm:inline-flex">{t("nav.signIn")}</Link>
               <Link href="/signup" aria-label={t("nav.signUpFree")} className="btn btn-primary !size-10 !p-0 sm:!size-auto sm:!px-5 sm:!py-2.5"><UserRound className="size-4" /> <span className="hidden sm:inline">{t("nav.signUpFree")}</span></Link>
@@ -69,7 +69,7 @@ export async function Header() {
               <Link href="/dashboard" className="btn btn-dark hidden !py-2.5 xl:inline-flex"><LayoutDashboard className="size-4" /> {t("nav.dashboard")}</Link>
 
               {/* Wishlist */}
-              <Link href="/dashboard?tab=saved" aria-label={`${t("nav.saved")} (${nav!.saved})`} title={t("nav.saved")}
+              <Link href="/saved" aria-label={`${t("nav.saved")} (${nav!.saved})`} title={t("nav.saved")}
                 className="relative hidden size-10 place-items-center rounded-full hover:bg-white sm:grid">
                 <Heart className={`size-5 ${nav!.saved ? "fill-coral text-coral" : ""}`} /><Count n={nav!.saved} className="bg-navy text-white" />
               </Link>
@@ -123,7 +123,7 @@ export async function Header() {
                   {menu.map(([label, href, Icon]) => (
                     <Link key={href} href={href} className="flex items-center gap-3 rounded-xl px-3 py-2 font-semibold hover:bg-surface">
                       <Icon className="size-4 text-muted" /> {label}
-                      {href === "/dashboard?tab=saved" && nav!.saved > 0 && <span className="ml-auto text-xs font-bold text-muted">{nav!.saved}</span>}
+                      {href === "/saved" && nav!.saved > 0 && <span className="ml-auto text-xs font-bold text-muted">{nav!.saved}</span>}
                     </Link>
                   ))}
                   <hr className="my-1 border-line" />
