@@ -82,7 +82,7 @@ export default async function Home() {
           {/* Live map */}
           <div className="rise relative [animation-delay:120ms]">
             <div className="relative h-[380px] overflow-hidden rounded-[2.5rem] border-4 border-white bg-ice/40 shadow-[var(--shadow-lift)] sm:h-[500px]">
-              <LazyMap pins={pins} controls={false} />
+              <LazyMap pins={pins} controls={false} cooperative />
               <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex items-start justify-between p-4">
                 <span className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-bold shadow-[var(--shadow-soft)]">
                   <span className="relative flex size-2.5"><span className="absolute inset-0 animate-ping rounded-full bg-coral/70" /><span className="relative size-2.5 rounded-full bg-coral" /></span>

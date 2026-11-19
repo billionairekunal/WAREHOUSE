@@ -6,5 +6,5 @@ const MapView = dynamic(() => import("@/components/MapView"), { ssr: false, load
 
 export function MiniMap({ lat, lng, label }: { lat: number; lng: number; label: string }) {
   const pins = useMemo(() => [{ id: "x", lat, lng, label: "📍 " + label }], [lat, lng, label]);
-  return <MapView pins={pins} />;
+  return <MapView pins={pins} cooperative />;
 }

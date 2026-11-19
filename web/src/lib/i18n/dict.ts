@@ -229,6 +229,7 @@ const en = {
   "sp.tryFlex": "Try flex storage",
   "map.show": "Show map",
   "map.list": "Show list",
+  "map.pinch": "Pinch with two fingers to zoom",
 
   // listing card
   "c.verified": "Verified",
@@ -604,6 +605,7 @@ const hi: Dict = {
   "sp.tryFlex": "फ्लेक्स स्टोरेज आज़माएँ",
   "map.show": "नक्शा दिखाएँ",
   "map.list": "सूची दिखाएँ",
+  "map.pinch": "ज़ूम के लिए दो उंगलियों से पिंच करें",
 
   "c.verified": "सत्यापित",
   "c.review": "जाँच जारी",
@@ -972,6 +974,7 @@ const mr: Dict = {
   "sp.tryFlex": "फ्लेक्स स्टोरेज वापरून पाहा",
   "map.show": "नकाशा दाखवा",
   "map.list": "यादी दाखवा",
+  "map.pinch": "झूमसाठी दोन बोटांनी पिंच करा",
 
   "c.verified": "सत्यापित",
   "c.review": "तपासणी सुरू",
