@@ -1,9 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight, ArrowUpRight, BadgeCheck, CalendarCheck, ClipboardCheck, Clock3, FileSignature, Gauge, LayoutGrid,
-  LocateFixed, MapPinned, ScanSearch, ShieldCheck, Sparkles, Wallet, Zap,
-} from "lucide-react";
+import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardCheck, Clock3, LayoutGrid, LocateFixed, MapPinned, ShieldCheck, Sparkles, Wallet, Zap } from "lucide-react";
 import { getSession } from "@/lib/supabase/server";
 import { CARD_FIELDS, type CardListing, STORAGE_TYPES, img } from "@/lib/data";
 import { HeroSearch } from "@/components/HeroSearch";
@@ -135,32 +132,6 @@ export default async function Home() {
               <div key={l.id} className="w-[82%] shrink-0 snap-start sm:w-auto"><ListingCard l={l} priority={i < 3} /></div>
             ))}
           </div>
-        </section>
-
-        {/* ================= HOW IT WORKS ================= */}
-        <section id="how" className="mx-auto mt-24 max-w-7xl scroll-mt-24 px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <p className="eyebrow text-brand">How it works</p>
-            <h2 className="mt-3 text-4xl font-black sm:text-6xl">Search to keys in <span className="hl">days</span>, not months.</h2>
-          </div>
-          <ol className="mt-10 grid gap-4 md:grid-cols-4">
-            {[
-              [ScanSearch, "Search & shortlist", "Filter by clear height, docks, power, MIDC zone and price.", "bg-brand text-white"],
-              [CalendarCheck, "Quote & visit", "Owners reply with full commercials. Book a visit in two taps.", "bg-lime text-ink"],
-              [Gauge, "Compare true cost", "Rent + CAM + GST + deposit + escalation as one number.", "bg-coral text-white"],
-              [FileSignature, "Sign & move in", "LOI and agreement online, then a handover checklist.", "bg-navy text-white"],
-            ].map(([Icon, t, d, c], i) => {
-              const I = Icon as typeof ScanSearch;
-              return (
-                <li key={t as string} className="group relative overflow-hidden rounded-[2rem] border border-white bg-white/80 p-6 shadow-[var(--shadow-soft)] backdrop-blur transition hover:-translate-y-1">
-                  <span className="display absolute -right-2 -top-6 text-[7rem] font-black text-ink/[0.04]">0{i + 1}</span>
-                  <span className={`tile-icon size-12 ${c}`}><I className="size-5" /></span>
-                  <h3 className="mt-6 text-2xl font-extrabold">{t as string}</h3>
-                  <p className="mt-2 text-muted">{d as string}</p>
-                </li>
-              );
-            })}
-          </ol>
         </section>
 
         {/* ================= TRUST ================= */}
