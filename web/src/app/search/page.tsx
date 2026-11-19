@@ -5,6 +5,7 @@ import { getSession } from "@/lib/supabase/server";
 import { CARD_FIELDS, type CardListing } from "@/lib/data";
 import { ListingCard } from "@/components/ListingCard";
 import { Filters } from "./Filters";
+import { ListSearch } from "./ListSearch";
 import { ResultsLayout } from "./ResultsLayout";
 
 export const metadata: Metadata = { title: "Find warehouse space" };
@@ -17,6 +18,9 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
   let q = supabase.from("listings").select(CARD_FIELDS).eq("status", "live");
   if (p("type")) q = q.contains("storage_types", [p("type")]);
   if (p("market")) q = q.ilike("micro_market", `%${p("market").replace(/[%_,()]/g, "")}%`);
+  // free text: match name, area, address or type (strip characters that would break the filter syntax)
+  const text = p("q").replace(/[%_,().*"\:]/g, " ").trim().slice(0, 80);
+  if (text) q = q.or(["name", "micro_market", "address", "primary_type", "city"].map((c) => `${c}.ilike.%${text}%`).join(","));
   if (p("area")) q = q.gte("area_available", Number(p("area")) || 0);
   if (p("max_rent")) q = q.lte("rent_psf", Number(p("max_rent")) || 0);
   if (p("min_height")) q = q.gte("clear_height_m", Number(p("min_height")) || 0);
@@ -52,6 +56,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
         </h1>
         <p className="mt-1 text-sm text-muted sm:text-base">Compare verified spaces by location, storage type, specs and price.</p>
       </div>
+      <div className="mb-4"><ListSearch /></div>
       <Filters count={listings.length} />
       <ResultsLayout pins={pins}>
         {listings.length ? (
