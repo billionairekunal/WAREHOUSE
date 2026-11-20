@@ -2,9 +2,9 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import {
-  ArrowLeft, ArrowRight, Building2, Check, ClipboardCheck, ImagePlus, IndianRupee, Loader2, MapPin, Ruler,
+  ArrowLeft, ArrowRight, Building2, Check, ChevronDown, ClipboardCheck, ImagePlus, IndianRupee, Loader2, MapPin, Ruler,
   Save, ShieldCheck, Trash2, UploadCloud,
 } from "lucide-react";
 import { saveListing } from "@/app/actions";
@@ -129,17 +129,15 @@ export function Wizard({ userId, initial }: { userId: string; initial?: F }) {
         {step === 0 && (
           <div className="grid gap-5 sm:grid-cols-2">
             <T f={f} set={set} e={errors} k="name" label="Warehouse name" ph="e.g. Chakan Phase II Grade-A Park" full />
-            <S f={f} set={set} e={errors} k="micro_market" label="Micro-market" opts={MICRO_MARKETS} full />
-            <T f={f} set={set} e={errors} k="address" label="Address / plot no." ph="Plot A-14, MIDC Phase II, Chakan" full />
+            <S f={f} set={set} e={errors} k="micro_market" label="Micro-market" opts={MICRO_MARKETS} />
             <T f={f} set={set} e={errors} k="pincode" label="PIN code" ph="410501" />
-            <S f={f} set={set} e={errors} k="building_type" label="Building type" opts={["PEB", "RCC", "Shed", "Open land + shed", "Open land"]} />
-            <S f={f} set={set} e={errors} k="primary_type" label="Primary storage type" opts={STORAGE_TYPES.map((t) => t.name)} full
+            <T f={f} set={set} e={errors} k="address" label="Address / plot no." ph="Plot A-14, MIDC Phase II, Chakan" full />
+            <S f={f} set={set} e={errors} k="primary_type" label="Primary storage type" opts={STORAGE_TYPES.map((t) => t.name)}
               onPick={(v) => !f.storage_types.includes(v) && set("storage_types", [...f.storage_types, v])} />
-            <div className="sm:col-span-2 grid gap-5 sm:grid-cols-3">
-              <N f={f} set={set} e={errors} k="area_total" label="Total built-up (sq ft)" ph="120000" />
-              <N f={f} set={set} e={errors} k="area_available" label="Available area (sq ft)" ph="52000" />
-              <N f={f} set={set} e={errors} k="area_min" label="Min. divisible area (sq ft)" ph="15000" />
-            </div>
+            <S f={f} set={set} e={errors} k="building_type" label="Building type" opts={["PEB", "RCC", "Shed", "Open land + shed", "Open land"]} />
+            <N f={f} set={set} e={errors} k="area_total" label="Total built-up (sq ft)" ph="120000" />
+            <N f={f} set={set} e={errors} k="area_available" label="Available area (sq ft)" ph="52000" />
+            <N f={f} set={set} e={errors} k="area_min" label="Min. divisible area (sq ft)" ph="15000" />
             <Chips label="Also suitable for" opts={STORAGE_TYPES.map((t) => t.name)} value={f.storage_types} onToggle={(v) => toggleIn("storage_types", v)} />
             <label className="sm:col-span-2"><span className="label">Description</span>
               <textarea rows={4} value={(f.description as string) ?? ""} onChange={(e) => set("description", e.target.value)} className="field resize-y"
@@ -171,7 +169,7 @@ export function Wizard({ userId, initial }: { userId: string; initial?: F }) {
         {step === 2 && (
           <div className="grid gap-5 sm:grid-cols-2">
             <S f={f} set={set} e={errors} k="grade" label="Warehouse grade" opts={["A", "B", "C"]} />
-            <S f={f} set={set} e={errors} k="flooring" label="Flooring" opts={["FM2 / Laser screed", "VDF trimix", "Trimix", "Epoxy", "Concrete", "Concrete paver"]} full />
+            <S f={f} set={set} e={errors} k="flooring" label="Flooring" opts={["FM2 / Laser screed", "VDF trimix", "Trimix", "Epoxy", "Concrete", "Concrete paver"]} />
             <N f={f} set={set} e={errors} k="clear_height_m" label="Clear height at centre (m)" ph="12" step={0.1} />
             <N f={f} set={set} e={errors} k="eave_height_m" label="Height at eaves (m)" ph="9" step={0.1} />
             <N f={f} set={set} e={errors} k="floor_load_mt" label="Floor load (MT/sqm)" ph="5" step={0.5} />
@@ -187,7 +185,8 @@ export function Wizard({ userId, initial }: { userId: string; initial?: F }) {
           <div className="grid gap-5 sm:grid-cols-2">
             <N f={f} set={set} e={errors} k="power_kva" label="Sanctioned power load (KVA)" ph="150" />
             <S f={f} set={set} e={errors} k="power_backup" label="Power backup" opts={["None", "DG 50%", "DG 70%", "DG 100%"]} />
-            <S f={f} set={set} e={errors} k="fire_safety" label="Fire safety system" opts={["Extinguishers", "Extinguishers + hydrants", "Hydrants + sprinklers", "ESFR sprinklers"]} full />
+            <S f={f} set={set} e={errors} k="fire_safety" label="Fire safety system" opts={["Extinguishers", "Extinguishers + hydrants", "Hydrants + sprinklers", "ESFR sprinklers"]} />
+            <div />
             <B f={f} set={set} k="fire_noc" label="Valid Fire NOC available" />
             {f.fire_noc ? <D f={f} set={set} e={errors} k="fire_noc_expiry" label="Fire NOC valid until" /> : <div />}
             <p className="flex gap-2 rounded-2xl bg-ice/40 p-4 text-sm text-royal sm:col-span-2">
@@ -296,15 +295,56 @@ function D({ f, set, e, k, label }: P) {
   return <label><span className="label">{label}</span>
     <input type="date" value={(f[k] as string) ?? ""} onChange={(x) => set(k, x.target.value)} aria-invalid={!!e?.[k]} data-filled={!!f[k]} className="field" /><Err m={e?.[k]} /></label>;
 }
-/** Single choice as tap-to-pick buttons (no browser dropdown). Tapping the picked one again clears it. */
-function S({ f, set, e, k, label, opts, fmt, onPick, full }: P & { opts: string[]; fmt?: (v: string) => string; onPick?: (v: string) => void }) {
+/** Dropdown: a closed box that opens a styled list (keyboard: ↑ ↓ Enter Esc). */
+function S({ f, set, e, k, label, opts, fmt, onPick }: P & { opts: string[]; fmt?: (v: string) => string; onPick?: (v: string) => void }) {
   const cur = f[k] == null ? "" : String(f[k]);
-  const pick = (v: string) => { const next = cur === v ? "" : v; set(k, next && /^\d+$/.test(next) && fmt ? Number(next) : next || null); if (next) onPick?.(next); };
-  return <fieldset className={full ? "sm:col-span-2" : ""}><legend className="label">{label}</legend>
-    <div className={`flex flex-wrap gap-2 rounded-2xl ${e?.[k] ? "ring-2 ring-danger/40 ring-offset-2" : ""}`}>
-      {opts.map((o) => <button key={o} type="button" className="pick" aria-pressed={cur === o} onClick={() => pick(o)}>
-        {cur === o && <Check className="size-3.5" />}{fmt ? fmt(o) : o}</button>)}
-    </div><Err m={e?.[k]} /></fieldset>;
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const box = useRef<HTMLDivElement>(null);
+  const id = useId();
+  const show = (v: string) => (fmt ? fmt(v) : v);
+  useEffect(() => {
+    if (!open) return;
+    const away = (ev: PointerEvent) => { if (!box.current?.contains(ev.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", away);
+    box.current?.querySelector(`[data-i="${active}"]`)?.scrollIntoView({ block: "nearest" });
+    return () => document.removeEventListener("pointerdown", away);
+  }, [open, active]);
+  const choose = (v: string) => { set(k, /^\d+$/.test(v) && fmt ? Number(v) : v); onPick?.(v); setOpen(false); };
+  const toggle = () => { setActive(Math.max(0, opts.indexOf(cur))); setOpen(!open); };
+  const keys = (ev: React.KeyboardEvent) => {
+    if (ev.key === "Escape") return setOpen(false);
+    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+      ev.preventDefault();
+      if (!open) return toggle();
+      setActive((a) => (a + (ev.key === "ArrowDown" ? 1 : opts.length - 1)) % opts.length);
+    }
+    if ((ev.key === "Enter" || ev.key === " ") && open) { ev.preventDefault(); choose(opts[active]); }
+  };
+
+  return (
+    <div ref={box} className="relative">
+      <span className="label" id={`${id}-l`}>{label}</span>
+      <button type="button" role="combobox" aria-controls={`${id}-list`} onClick={toggle} onKeyDown={keys} aria-haspopup="listbox" aria-expanded={open} aria-labelledby={`${id}-l`} aria-invalid={!!e?.[k]}
+        aria-activedescendant={open ? `${id}-${active}` : undefined} data-filled={!!cur}
+        className={`field flex items-center justify-between gap-2 text-left ${open ? "!border-sky !bg-white shadow-[0_0_0_4px_rgb(55_129_252/0.15)]" : ""}`}>
+        <span className={`truncate ${cur ? "font-semibold" : "text-muted"}`}>{cur ? show(cur) : "Select…"}</span>
+        <ChevronDown className={`size-4 shrink-0 text-muted transition-transform ${open ? "rotate-180 text-brand" : ""}`} />
+      </button>
+      {open && (
+        <ul role="listbox" id={`${id}-list`} aria-labelledby={`${id}-l`}
+          className="absolute inset-x-0 top-full z-40 mt-2 max-h-64 overflow-auto rounded-2xl border border-line bg-white p-1.5 shadow-[var(--shadow-lift)]">
+          {opts.map((o, i) => (
+            <li key={o} id={`${id}-${i}`} data-i={i} role="option" aria-selected={cur === o} onPointerEnter={() => setActive(i)} onClick={() => choose(o)}
+              className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm ${cur === o ? "font-bold text-brand" : "font-medium"} ${active === i ? "bg-ice/60" : ""}`}>
+              {show(o)}{cur === o && <Check className="size-4 shrink-0" />}
+            </li>
+          ))}
+        </ul>
+      )}
+      <Err m={e?.[k]} />
+    </div>
+  );
 }
 function B({ f, set, k, label }: P) {
   const on = !!f[k];

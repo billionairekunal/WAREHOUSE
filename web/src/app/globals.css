@@ -218,19 +218,6 @@ p { text-wrap: pretty; }
     background-size: 1.1rem;
     cursor: pointer;
   }
-  /* tap-to-pick option (single choice) */
-  .pick {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    border-radius: 0.9rem; padding: 0.6rem 0.95rem;
-    font-size: 0.85rem; font-weight: 700;
-    background: var(--color-surface); border: 1.5px solid var(--color-line); color: var(--color-ink);
-    transition: all 0.15s ease;
-  }
-  .pick:hover { border-color: var(--color-sky); background: white; }
-  .pick[aria-pressed="true"] {
-    background: rgb(203 233 253 / 0.45); border-color: var(--color-brand); color: var(--color-royal);
-    box-shadow: 0 0 0 3px rgb(55 129 252 / 0.12);
-  }
   .label {
     display: block;
     font-size: 0.8rem;
