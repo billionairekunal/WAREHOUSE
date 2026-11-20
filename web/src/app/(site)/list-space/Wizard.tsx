@@ -129,15 +129,17 @@ export function Wizard({ userId, initial }: { userId: string; initial?: F }) {
         {step === 0 && (
           <div className="grid gap-5 sm:grid-cols-2">
             <T f={f} set={set} e={errors} k="name" label="Warehouse name" ph="e.g. Chakan Phase II Grade-A Park" full />
-            <S f={f} set={set} e={errors} k="micro_market" label="Micro-market" opts={MICRO_MARKETS} />
-            <T f={f} set={set} e={errors} k="pincode" label="PIN code" ph="410501" />
+            <S f={f} set={set} e={errors} k="micro_market" label="Micro-market" opts={MICRO_MARKETS} full />
             <T f={f} set={set} e={errors} k="address" label="Address / plot no." ph="Plot A-14, MIDC Phase II, Chakan" full />
-            <S f={f} set={set} e={errors} k="primary_type" label="Primary storage type" opts={STORAGE_TYPES.map((t) => t.name)}
-              onPick={(v) => !f.storage_types.includes(v) && set("storage_types", [...f.storage_types, v])} />
+            <T f={f} set={set} e={errors} k="pincode" label="PIN code" ph="410501" />
             <S f={f} set={set} e={errors} k="building_type" label="Building type" opts={["PEB", "RCC", "Shed", "Open land + shed", "Open land"]} />
-            <N f={f} set={set} e={errors} k="area_total" label="Total built-up (sq ft)" ph="120000" />
-            <N f={f} set={set} e={errors} k="area_available" label="Available area (sq ft)" ph="52000" />
-            <N f={f} set={set} e={errors} k="area_min" label="Min. divisible area (sq ft)" ph="15000" />
+            <S f={f} set={set} e={errors} k="primary_type" label="Primary storage type" opts={STORAGE_TYPES.map((t) => t.name)} full
+              onPick={(v) => !f.storage_types.includes(v) && set("storage_types", [...f.storage_types, v])} />
+            <div className="sm:col-span-2 grid gap-5 sm:grid-cols-3">
+              <N f={f} set={set} e={errors} k="area_total" label="Total built-up (sq ft)" ph="120000" />
+              <N f={f} set={set} e={errors} k="area_available" label="Available area (sq ft)" ph="52000" />
+              <N f={f} set={set} e={errors} k="area_min" label="Min. divisible area (sq ft)" ph="15000" />
+            </div>
             <Chips label="Also suitable for" opts={STORAGE_TYPES.map((t) => t.name)} value={f.storage_types} onToggle={(v) => toggleIn("storage_types", v)} />
             <label className="sm:col-span-2"><span className="label">Description</span>
               <textarea rows={4} value={(f.description as string) ?? ""} onChange={(e) => set("description", e.target.value)} className="field resize-y"
@@ -169,7 +171,7 @@ export function Wizard({ userId, initial }: { userId: string; initial?: F }) {
         {step === 2 && (
           <div className="grid gap-5 sm:grid-cols-2">
             <S f={f} set={set} e={errors} k="grade" label="Warehouse grade" opts={["A", "B", "C"]} />
-            <S f={f} set={set} e={errors} k="flooring" label="Flooring" opts={["FM2 / Laser screed", "VDF trimix", "Trimix", "Epoxy", "Concrete", "Concrete paver"]} />
+            <S f={f} set={set} e={errors} k="flooring" label="Flooring" opts={["FM2 / Laser screed", "VDF trimix", "Trimix", "Epoxy", "Concrete", "Concrete paver"]} full />
             <N f={f} set={set} e={errors} k="clear_height_m" label="Clear height at centre (m)" ph="12" step={0.1} />
             <N f={f} set={set} e={errors} k="eave_height_m" label="Height at eaves (m)" ph="9" step={0.1} />
             <N f={f} set={set} e={errors} k="floor_load_mt" label="Floor load (MT/sqm)" ph="5" step={0.5} />
@@ -185,8 +187,7 @@ export function Wizard({ userId, initial }: { userId: string; initial?: F }) {
           <div className="grid gap-5 sm:grid-cols-2">
             <N f={f} set={set} e={errors} k="power_kva" label="Sanctioned power load (KVA)" ph="150" />
             <S f={f} set={set} e={errors} k="power_backup" label="Power backup" opts={["None", "DG 50%", "DG 70%", "DG 100%"]} />
-            <S f={f} set={set} e={errors} k="fire_safety" label="Fire safety system" opts={["Extinguishers", "Extinguishers + hydrants", "Hydrants + sprinklers", "ESFR sprinklers"]} />
-            <div />
+            <S f={f} set={set} e={errors} k="fire_safety" label="Fire safety system" opts={["Extinguishers", "Extinguishers + hydrants", "Hydrants + sprinklers", "ESFR sprinklers"]} full />
             <B f={f} set={set} k="fire_noc" label="Valid Fire NOC available" />
             {f.fire_noc ? <D f={f} set={set} e={errors} k="fire_noc_expiry" label="Fire NOC valid until" /> : <div />}
             <p className="flex gap-2 rounded-2xl bg-ice/40 p-4 text-sm text-royal sm:col-span-2">
@@ -281,26 +282,38 @@ function T({ f, set, e, k, label, ph, full }: P) {
   return <label className={full ? "sm:col-span-2" : ""}><span className="label">{label}</span>
     <input value={(f[k] as string) ?? ""} onChange={(x) => set(k, x.target.value)} placeholder={ph} aria-invalid={!!e?.[k]} className="field" /><Err m={e?.[k]} /></label>;
 }
+/** Number field; a trailing "(unit)" in the label is shown inside the box instead. */
 function N({ f, set, e, k, label, ph, step = 1 }: P & { step?: number }) {
-  return <label><span className="label">{label}</span>
-    <input type="number" inputMode="decimal" min={0} step={step} value={(f[k] as number) ?? ""} onChange={(x) => set(k, x.target.value === "" ? null : Number(x.target.value))}
-      placeholder={ph} aria-invalid={!!e?.[k]} className="field" /><Err m={e?.[k]} /></label>;
+  const unit = label.match(/\(([^)]+)\)$/)?.[1];
+  return <label><span className="label">{unit ? label.slice(0, label.lastIndexOf("(")).trim() : label}</span>
+    <span className="relative block">
+      <input type="number" inputMode="decimal" min={0} step={step} value={(f[k] as number) ?? ""} onChange={(x) => set(k, x.target.value === "" ? null : Number(x.target.value))}
+        placeholder={ph} aria-invalid={!!e?.[k]} className={`field ${unit ? "pr-28" : ""}`} />
+      {unit && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-ice/60 px-2 py-1 text-xs font-bold text-royal">{unit}</span>}
+    </span><Err m={e?.[k]} /></label>;
 }
 function D({ f, set, e, k, label }: P) {
   return <label><span className="label">{label}</span>
-    <input type="date" value={(f[k] as string) ?? ""} onChange={(x) => set(k, x.target.value)} aria-invalid={!!e?.[k]} className="field" /><Err m={e?.[k]} /></label>;
+    <input type="date" value={(f[k] as string) ?? ""} onChange={(x) => set(k, x.target.value)} aria-invalid={!!e?.[k]} data-filled={!!f[k]} className="field" /><Err m={e?.[k]} /></label>;
 }
-function S({ f, set, e, k, label, opts, fmt, onPick }: P & { opts: string[]; fmt?: (v: string) => string; onPick?: (v: string) => void }) {
-  return <label><span className="label">{label}</span>
-    <select value={f[k] == null ? "" : String(f[k])} aria-invalid={!!e?.[k]} className="field"
-      onChange={(x) => { const v = x.target.value; set(k, /^\d+$/.test(v) && fmt ? Number(v) : v || null); if (v) onPick?.(v); }}>
-      <option value="">Select…</option>{opts.map((o) => <option key={o} value={o}>{fmt ? fmt(o) : o}</option>)}
-    </select><Err m={e?.[k]} /></label>;
+/** Single choice as tap-to-pick buttons (no browser dropdown). Tapping the picked one again clears it. */
+function S({ f, set, e, k, label, opts, fmt, onPick, full }: P & { opts: string[]; fmt?: (v: string) => string; onPick?: (v: string) => void }) {
+  const cur = f[k] == null ? "" : String(f[k]);
+  const pick = (v: string) => { const next = cur === v ? "" : v; set(k, next && /^\d+$/.test(next) && fmt ? Number(next) : next || null); if (next) onPick?.(next); };
+  return <fieldset className={full ? "sm:col-span-2" : ""}><legend className="label">{label}</legend>
+    <div className={`flex flex-wrap gap-2 rounded-2xl ${e?.[k] ? "ring-2 ring-danger/40 ring-offset-2" : ""}`}>
+      {opts.map((o) => <button key={o} type="button" className="pick" aria-pressed={cur === o} onClick={() => pick(o)}>
+        {cur === o && <Check className="size-3.5" />}{fmt ? fmt(o) : o}</button>)}
+    </div><Err m={e?.[k]} /></fieldset>;
 }
 function B({ f, set, k, label }: P) {
-  return <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-surface p-4">
-    <input type="checkbox" checked={!!f[k]} onChange={(x) => set(k, x.target.checked)} className="size-5 accent-brand" />
-    <span className="text-sm font-semibold">{label}</span></label>;
+  const on = !!f[k];
+  return <label className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border-[1.5px] p-4 transition ${on ? "border-brand bg-ice/40" : "border-line bg-surface hover:border-sky"}`}>
+    <span className="text-sm font-semibold">{label}</span>
+    <input type="checkbox" checked={on} onChange={(x) => set(k, x.target.checked)} className="peer sr-only" />
+    <span aria-hidden className={`relative h-6 w-11 shrink-0 rounded-full transition peer-focus-visible:ring-4 peer-focus-visible:ring-sky/30 ${on ? "bg-brand" : "bg-line"}`}>
+      <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${on ? "left-[22px]" : "left-0.5"}`} />
+    </span></label>;
 }
 function Chips({ label, opts, value, onToggle }: { label: string; opts: string[]; value: string[]; onToggle: (v: string) => void }) {
   return <fieldset className="sm:col-span-2"><legend className="label">{label}</legend>

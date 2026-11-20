@@ -196,6 +196,41 @@ p { text-wrap: pretty; }
     box-shadow: 0 0 0 4px rgb(55 129 252 / 0.15);
   }
   .field[aria-invalid="true"] { border-color: var(--color-danger); }
+  /* filled fields turn white so it's clear what's done */
+  .field:not(:placeholder-shown):not(select), .field[data-filled="true"] { background: white; }
+  /* browser autofill / saved suggestions: keep our look instead of the yellow-blue fill */
+  .field:-webkit-autofill, .field:-webkit-autofill:hover, .field:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-ink);
+    -webkit-box-shadow: 0 0 0 1000px white inset;
+    caret-color: var(--color-ink);
+    transition: background-color 9999s ease-out 0s;
+  }
+  /* no tiny spinner arrows on number fields */
+  .field[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+  .field[type="number"]::-webkit-inner-spin-button, .field[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .field[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
+  select.field {
+    appearance: none;
+    padding-right: 2.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.1rem;
+    cursor: pointer;
+  }
+  /* tap-to-pick option (single choice) */
+  .pick {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    border-radius: 0.9rem; padding: 0.6rem 0.95rem;
+    font-size: 0.85rem; font-weight: 700;
+    background: var(--color-surface); border: 1.5px solid var(--color-line); color: var(--color-ink);
+    transition: all 0.15s ease;
+  }
+  .pick:hover { border-color: var(--color-sky); background: white; }
+  .pick[aria-pressed="true"] {
+    background: rgb(203 233 253 / 0.45); border-color: var(--color-brand); color: var(--color-royal);
+    box-shadow: 0 0 0 3px rgb(55 129 252 / 0.12);
+  }
   .label {
     display: block;
     font-size: 0.8rem;
