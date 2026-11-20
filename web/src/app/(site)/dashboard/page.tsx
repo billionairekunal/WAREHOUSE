@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import {
   CalendarClock, CheckCircle2, FileText, Heart, LayoutGrid, Plus, Settings2, Trophy, Warehouse,
 } from "lucide-react";
-import { getSession } from "@/lib/supabase/server";
+import { getSession, profileDone } from "@/lib/supabase/server";
 import { CARD_FIELDS, type CardListing, costBreakdown, date, img, inr, sqft } from "@/lib/data";
 import { ListingCard } from "@/components/ListingCard";
 import { EnablePush } from "@/components/EnablePush";
@@ -52,6 +52,7 @@ const AWAITING = ["pending_review", "requested", "owner_responded"];
 export default async function Dashboard({ searchParams }: PageProps<"/dashboard">) {
   const { supabase, user, profile } = await getSession();
   if (!user) redirect("/login?next=/dashboard");
+  if (!profileDone(profile)) redirect("/onboarding?next=/dashboard");
   const sp = await searchParams;
   const isOwner = profile?.role === "owner" || profile?.role === "admin";
   const QSEL = "*, listing:listings(id,name,micro_market,photos)";

@@ -45,3 +45,13 @@ export type Profile = {
   company_name: string | null;
   gstin: string | null;
 };
+
+/** Name, mobile and company are compulsory for every account (admins excepted). */
+export const profileDone = (p: Pick<Profile, "full_name" | "phone" | "company_name" | "role"> | null) =>
+  !!p && (p.role === "admin" || !!(p.full_name?.trim() && p.phone?.trim() && p.company_name?.trim()));
+
+/** Where to land after signing in: the profile form first when details are missing. */
+export async function landing(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, dest: string) {
+  const { data } = await supabase.from("profiles").select("full_name, phone, company_name, role").eq("id", userId).single();
+  return profileDone(data) ? dest : `/onboarding?next=${encodeURIComponent(dest)}`;
+}

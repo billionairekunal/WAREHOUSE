@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getSession } from "@/lib/supabase/server";
+import { getSession, profileDone } from "@/lib/supabase/server";
 import { Wizard } from "./Wizard";
 
 export const metadata: Metadata = { title: "List your space" };
 
 export default async function ListSpacePage({ searchParams }: PageProps<"/list-space">) {
-  const { supabase, user } = await getSession();
+  const { supabase, user, profile } = await getSession();
   if (!user) redirect("/login?next=/list-space");
+  if (!profileDone(profile)) redirect("/onboarding?next=/list-space");
   const id = (await searchParams).id;
   let initial;
   if (typeof id === "string") {

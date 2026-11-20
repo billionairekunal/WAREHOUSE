@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, landing } from "@/lib/supabase/server";
 
 /** Landing page for email confirmation links: signs the user in, then opens the dashboard. */
 export async function GET(request: NextRequest) {
@@ -19,5 +19,7 @@ export async function GET(request: NextRequest) {
       : { error: new Error("missing code") };
 
   if (error) return NextResponse.redirect(`${origin}/login?error=link`);
-  return NextResponse.redirect(`${origin}${dest}`);
+  // Google sign-ups have no mobile or company yet: profile form first
+  const { data } = await supabase.auth.getUser();
+  return NextResponse.redirect(`${origin}${data.user ? await landing(supabase, data.user.id, dest) : dest}`);
 }

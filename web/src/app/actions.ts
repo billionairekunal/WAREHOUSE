@@ -6,7 +6,7 @@ import { cookies, headers } from "next/headers";
 import { LANG_COOKIE, isLang } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { after } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, landing } from "@/lib/supabase/server";
 import { notify, notifyAdmins } from "@/lib/push";
 import { serviceClient } from "@/lib/admin";
 
@@ -46,17 +46,18 @@ const str = (v: FormDataEntryValue | null) => (typeof v === "string" && v.trim()
 // ---------- auth ----------
 export async function signIn(_: unknown, fd: FormData): Promise<Result> {
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: String(fd.get("email")), password: String(fd.get("password")),
   });
   if (error) return { ok: false, error: error.message };
   const next = str(fd.get("next"));
-  redirect(next && /^\/(?![/\\])/.test(next) ? next : "/dashboard"); // same-site paths only
+  redirect(await landing(supabase, data.user.id, next && /^\/(?![/\\])/.test(next) ? next : "/dashboard")); // same-site paths only
 }
 
 export async function signUp(_: unknown, fd: FormData): Promise<Result> {
   const password = String(fd.get("password"));
   if (password.length < 8) return { ok: false, error: (await getT()).t("msg.pwShort") };
+  if (!str(fd.get("full_name")) || !str(fd.get("phone")) || !str(fd.get("company_name"))) return { ok: false, error: (await getT()).t("o.needed") };
   const supabase = await createClient();
   const origin = (await headers()).get("origin"); // confirmation email returns to whichever site they signed up on
   const { data, error } = await supabase.auth.signUp({
@@ -75,6 +76,21 @@ export async function signUp(_: unknown, fd: FormData): Promise<Result> {
   if (error) return { ok: false, error: error.message };
   if (!data.session) return { ok: true, message: (await getT()).t("msg.checkInbox") };
   redirect(fd.get("role") === "owner" ? "/list-space" : "/dashboard");
+}
+
+export async function completeProfile(_: unknown, fd: FormData): Promise<Result> {
+  const { supabase, user } = await requireUser();
+  if (!user) redirect("/login?next=/onboarding");
+  const role = fd.get("role") === "owner" ? "owner" : "tenant";
+  const { error } = await supabase.rpc("complete_profile", {
+    p_full_name: String(fd.get("full_name") ?? ""), p_phone: String(fd.get("phone") ?? ""), p_company: String(fd.get("company_name") ?? ""), p_role: role,
+  });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/", "layout");
+  const next = str(fd.get("next"));
+  const safe = next && /^\/(?![/\\])/.test(next) ? next : null;
+  // owners go straight to adding their warehouse
+  redirect(role === "owner" && (!safe || safe === "/dashboard") ? "/list-space" : safe ?? "/dashboard");
 }
 
 export async function signOut() {
@@ -114,7 +130,7 @@ export async function requestQuote(_: unknown, fd: FormData): Promise<Result> {
     tenure_months: num(fd.get("tenure_months")),
     tenant_note: str(fd.get("tenant_note")),
   }).select("tenant_company, listing:listings(name)").single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: error.message.includes("profile_incomplete") ? t("o.needed") : error.message };
   pushAdmins("New quote request", `${data.tenant_company ?? "A company"} needs ${area.toLocaleString("en-IN")} sq ft at ${listingName(data.listing)}`, "/admin/quotes");
   revalidatePath("/dashboard");
   return { ok: true, message: t("msg.quoteOk") };
@@ -130,7 +146,7 @@ export async function requestVisit(_: unknown, fd: FormData): Promise<Result> {
     listing_id: String(fd.get("listing_id")), tenant_id: user.id,
     scheduled_at: new Date(when).toISOString(), note: str(fd.get("note")),
   }).select("tenant_company, listing:listings(name)").single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: error.message.includes("profile_incomplete") ? t("o.needed") : error.message };
   pushAdmins("New site visit request", `${data.tenant_company ?? "A company"} wants to visit ${listingName(data.listing)}`, "/admin/visits");
   revalidatePath("/dashboard");
   return { ok: true, message: t("msg.visitOk") };

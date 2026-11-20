@@ -12,7 +12,7 @@ type L = {
   lock_in_months: number | null; escalation_pct: number | null; area_available: number | null; area_min: number | null;
 };
 
-export function RequestPanel({ l, loggedIn, isOwner }: { l: L; loggedIn: boolean; isOwner: boolean }) {
+export function RequestPanel({ l, loggedIn, profileOk, isOwner }: { l: L; loggedIn: boolean; profileOk: boolean; isOwner: boolean }) {
   const { t } = useT();
   const [tab, setTab] = useState<"quote" | "visit">("quote");
   const [area, setArea] = useState(l.area_min ?? l.area_available ?? 10000);
@@ -66,6 +66,11 @@ export function RequestPanel({ l, loggedIn, isOwner }: { l: L; loggedIn: boolean
             <div className="mt-5 text-center">
               <Link href={`/login?next=/warehouse/${l.id}`} className="btn btn-primary w-full !py-3.5">{t("r.signIn")}</Link>
               <p className="mt-2 text-xs text-muted">{t("r.free")}</p>
+            </div>
+          ) : !profileOk ? (
+            <div className="mt-5 rounded-3xl bg-ice/60 p-4 text-center">
+              <p className="text-sm font-semibold text-royal">{t("o.needed")}</p>
+              <Link href={`/onboarding?next=/warehouse/${l.id}`} className="btn btn-primary mt-3 w-full !py-3">{t("o.link")}</Link>
             </div>
           ) : tab === "quote" ? (
             <form action={quoteAction} className="mt-5 space-y-3">

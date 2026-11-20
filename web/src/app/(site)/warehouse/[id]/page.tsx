@@ -5,7 +5,7 @@ import {
   ArrowLeft, ArrowRight, BadgeCheck, Building2, CalendarDays, Car, CheckCircle2, Container, Flame, Gauge, Layers,
   MapPin, MoveVertical, Plane, Plug, Route, ShieldAlert, ShieldCheck, Square, TrainFront, Truck, Warehouse, Zap,
 } from "lucide-react";
-import { getSession } from "@/lib/supabase/server";
+import { getSession, profileDone } from "@/lib/supabase/server";
 import { CARD_FIELDS, type CardListing, type Listing, sqft } from "@/lib/data";
 import { Gallery } from "./Gallery";
 import { RequestPanel } from "./RequestPanel";
@@ -18,9 +18,9 @@ import { DATE_LOCALE, TYPE_KEY } from "@/lib/i18n";
 
 async function load(id: string) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { supabase, user } = await getSession();
+  const { supabase, user, profile } = await getSession();
   const { data } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
-  return { supabase, user, l: data as Listing | null };
+  return { supabase, user, profile, l: data as Listing | null };
 }
 
 export async function generateMetadata({ params }: PageProps<"/warehouse/[id]">): Promise<Metadata> {
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps<"/warehouse/[id]">)
 export default async function WarehousePage({ params }: PageProps<"/warehouse/[id]">) {
   const r = await load((await params).id);
   if (!r?.l) notFound();
-  const { l, supabase, user } = r;
+  const { l, supabase, user, profile } = r;
   const { t, lang } = await getT();
   const date = (d: string | null | undefined) =>
     d ? new Date(d).toLocaleDateString(DATE_LOCALE[lang], { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -175,7 +175,7 @@ export default async function WarehousePage({ params }: PageProps<"/warehouse/[i
           </div>
 
           <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-            <RequestPanel l={l} loggedIn={!!user} isOwner={user?.id === l.owner_id} />
+            <RequestPanel l={l} loggedIn={!!user} profileOk={profileDone(profile)} isOwner={user?.id === l.owner_id} />
             <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted"><Warehouse className="size-3.5" /> {t("d.listed", { d: date(l.created_at) })} · <CalendarDays className="size-3.5" /> {t("d.availableOn", { d: date(l.available_from) })}</p>
           </aside>
         </div>

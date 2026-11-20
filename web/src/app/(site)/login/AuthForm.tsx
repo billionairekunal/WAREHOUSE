@@ -57,7 +57,7 @@ export function AuthForm({ mode, next, role: initialRole }: { mode: "login" | "s
           </fieldset>
           <div className="grid gap-4 sm:grid-cols-2">
             <label><span className="label">{t("a.fullName")}</span><input name="full_name" required autoComplete="name" className="field" placeholder={t("a.namePh")} /></label>
-            <label><span className="label">{t("a.phone")}</span><input name="phone" type="tel" pattern="[0-9+ ]{10,15}" autoComplete="tel" className="field" placeholder="+91 98xxxxxx" /></label>
+            <label><span className="label">{t("a.phone")}</span><input name="phone" type="tel" required pattern="[0-9+ ]{10,15}" autoComplete="tel" className="field" placeholder="+91 98xxxxxx" /></label>
           </div>
           <label className="block"><span className="label">{role === "owner" ? t("a.ownerCompany") : t("a.company")}</span>
             <input name="company_name" required autoComplete="organization" className="field" placeholder={t("a.companyPh")} /></label>
