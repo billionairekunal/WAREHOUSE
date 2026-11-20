@@ -7,11 +7,13 @@ import { LANG_COOKIE, isLang } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { notify } from "@/lib/push";
+import { notify, notifyAdmins } from "@/lib/push";
+import { serviceClient } from "@/lib/admin";
 
 /** Fire-and-forget push after the response is sent. */
 const push = (userId: string | null | undefined, title: string, body: string, link = "/dashboard") =>
   after(() => notify(userId, { title, body, link }));
+const pushAdmins = (title: string, body: string, link: string) => after(() => notifyAdmins({ title, body, link }));
 
 // ---------- language ----------
 export async function setLang(lang: string) {
@@ -95,7 +97,9 @@ export async function toggleFavorite(listingId: string, saved: boolean): Promise
   return { ok: true };
 }
 
-// ---------- tenant: quote + visit ----------
+// ---------- company: quote + visit (everything goes to the platform first) ----------
+const listingName = (l: unknown) => (l as { name?: string } | null)?.name ?? "a listing";
+
 export async function requestQuote(_: unknown, fd: FormData): Promise<Result> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "login" };
@@ -109,11 +113,9 @@ export async function requestQuote(_: unknown, fd: FormData): Promise<Result> {
     move_in: str(fd.get("move_in")),
     tenure_months: num(fd.get("tenure_months")),
     tenant_note: str(fd.get("tenant_note")),
-  }).select("owner_id, tenant_company, listing:listings(name)").single();
+  }).select("tenant_company, listing:listings(name)").single();
   if (error) return { ok: false, error: error.message };
-  push(data.owner_id, "New quote request",
-    `${data.tenant_company ?? "A company"} needs ${area.toLocaleString("en-IN")} sq ft at ${(data.listing as unknown as { name: string })?.name}`,
-    "/dashboard?tab=requests");
+  pushAdmins("New quote request", `${data.tenant_company ?? "A company"} needs ${area.toLocaleString("en-IN")} sq ft at ${listingName(data.listing)}`, "/admin/quotes");
   revalidatePath("/dashboard");
   return { ok: true, message: t("msg.quoteOk") };
 }
@@ -127,30 +129,42 @@ export async function requestVisit(_: unknown, fd: FormData): Promise<Result> {
   const { data, error } = await supabase.from("visits").insert({
     listing_id: String(fd.get("listing_id")), tenant_id: user.id,
     scheduled_at: new Date(when).toISOString(), note: str(fd.get("note")),
-  }).select("owner_id, tenant_company, listing:listings(name)").single();
+  }).select("tenant_company, listing:listings(name)").single();
   if (error) return { ok: false, error: error.message };
-  push(data.owner_id, "Site visit requested",
-    `${data.tenant_company ?? "A company"} wants to visit ${(data.listing as unknown as { name: string })?.name}`, "/dashboard?tab=visits");
+  pushAdmins("New site visit request", `${data.tenant_company ?? "A company"} wants to visit ${listingName(data.listing)}`, "/admin/visits");
   revalidatePath("/dashboard");
   return { ok: true, message: t("msg.visitOk") };
 }
 
-export async function tenantQuoteAction(id: string, status: "accepted" | "rejected" | "withdrawn" | "negotiating", counter?: number) {
+/** Company answers an approved quote (accept / reject / counter) or withdraws. The DB guard enforces which moves are allowed. */
+export async function tenantQuoteAction(id: string, status: "accepted" | "rejected" | "withdrawn" | "counter_review", counter?: number) {
   const { supabase } = await requireUser();
-  const { data } = await supabase.from("quotes").update({ status, ...(counter ? { counter_rent_psf: counter } : {}) })
-    .eq("id", id).select("owner_id, tenant_company, status, listing:listings(name)").single();
-  const what = { accepted: "accepted your quote", rejected: "declined your quote", withdrawn: "withdrew their request", negotiating: `sent a counter-offer of ₹${counter}/sq ft` }[status];
-  if (data?.status === status) push(data.owner_id, "Quote update", `${data.tenant_company ?? "The company"} ${what} for ${(data.listing as unknown as { name: string })?.name}`, "/dashboard?tab=requests");
+  const { data } = await supabase.from("quotes").update({ status, ...(status === "counter_review" && counter ? { counter_rent_psf: counter } : {}) })
+    .eq("id", id).select("tenant_company, status, listing:listings(name)").single();
+  if (data?.status !== status) return;
+  if (status === "rejected" || status === "withdrawn") await serviceClient().from("quote_offers").update({ status: "closed" }).eq("quote_id", id);
+  const what = { accepted: "accepted the quote", rejected: "rejected the quote", withdrawn: "withdrew their request", counter_review: `countered at ₹${counter}/sq ft` }[status];
+  pushAdmins("Deal update", `${data.tenant_company ?? "A company"} ${what} for ${listingName(data.listing)}`, "/admin/quotes");
   revalidatePath("/dashboard");
 }
 
-// ---------- owner: respond ----------
+export async function cancelVisit(id: string) {
+  const { supabase } = await requireUser();
+  const { data } = await supabase.from("visits").update({ status: "cancelled" }).eq("id", id).select("status, tenant_company, listing:listings(name)").single();
+  if (data?.status !== "cancelled") return;
+  const { data: offer } = await serviceClient().from("visit_offers").update({ status: "cancelled" }).eq("visit_id", id).select("owner_id").maybeSingle();
+  if (offer) push(offer.owner_id, "Site visit cancelled", `The visit to ${listingName(data.listing)} was cancelled.`, "/dashboard?tab=visits");
+  pushAdmins("Site visit cancelled", `${data.tenant_company ?? "A company"} cancelled their visit to ${listingName(data.listing)}`, "/admin/visits");
+  revalidatePath("/dashboard");
+}
+
+// ---------- owner: answer platform enquiries (never sees who the company is) ----------
 export async function ownerQuote(_: unknown, fd: FormData): Promise<Result> {
   const { supabase } = await requireUser();
   const rent = num(fd.get("rent_psf"));
-  if (!rent) return { ok: false, error: "Enter rent per sq ft." };
-  const { data, error } = await supabase.from("quotes").update({
-    status: "quoted",
+  if (!rent || rent <= 0) return { ok: false, error: "Enter rent per sq ft." };
+  const { data, error } = await supabase.from("quote_offers").update({
+    status: "owner_quoted",
     rent_psf: rent,
     cam_psf: num(fd.get("cam_psf")),
     deposit_months: num(fd.get("deposit_months")),
@@ -159,29 +173,31 @@ export async function ownerQuote(_: unknown, fd: FormData): Promise<Result> {
     rent_free_days: num(fd.get("rent_free_days")),
     valid_until: str(fd.get("valid_until")),
     owner_note: str(fd.get("owner_note")),
-  }).eq("id", String(fd.get("id"))).select("tenant_id, listing:listings(name)").single();
+  }).eq("id", String(fd.get("id"))).select("quote_id, status, listing:listings(name)").single();
   if (error) return { ok: false, error: error.message };
-  push(data.tenant_id, "You have a new quote", `₹${rent}/sq ft for ${(data.listing as unknown as { name: string })?.name}. Compare it now.`, "/dashboard?tab=quotes");
+  if (data.status !== "owner_quoted") return { ok: false, error: "This enquiry is no longer open." };
+  await serviceClient().from("quotes").update({ status: "owner_quoted" }).eq("id", data.quote_id);
+  pushAdmins("Owner sent a quote", `₹${rent}/sq ft for ${listingName(data.listing)}. Review and send it to the company.`, "/admin/quotes");
   revalidatePath("/dashboard");
-  return { ok: true, message: "Quote sent." };
+  return { ok: true, message: "Quote sent to the platform team for review." };
 }
 
 export async function ownerDecline(id: string) {
   const { supabase } = await requireUser();
-  const { data } = await supabase.from("quotes").update({ status: "rejected" }).eq("id", id).select("tenant_id, status, listing:listings(name)").single();
-  if (data?.status === "rejected") push(data.tenant_id, "Quote request declined", `The owner of ${(data.listing as unknown as { name: string })?.name} can't take this one. Similar spaces are waiting.`, "/search");
+  const { data } = await supabase.from("quote_offers").update({ status: "declined" }).eq("id", id).select("quote_id, status, listing:listings(name)").single();
+  if (data?.status !== "declined") return;
+  await serviceClient().from("quotes").update({ status: "pending_review" }).eq("id", data.quote_id); // back to the admin
+  pushAdmins("Owner declined an enquiry", `${listingName(data.listing)} can't take this one. Suggest another space.`, "/admin/quotes");
   revalidatePath("/dashboard");
 }
 
-export async function visitStatus(id: string, status: "confirmed" | "cancelled" | "done") {
-  const { supabase, user } = await requireUser();
-  const { data } = await supabase.from("visits").update({ status }).eq("id", id).select("tenant_id, owner_id, status, scheduled_at, listing:listings(name)").single();
-  if (data?.status === status) {
-    const other = user?.id === data.owner_id ? data.tenant_id : data.owner_id;
-    const when = new Date(data.scheduled_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
-    const name = (data.listing as unknown as { name: string })?.name;
-    if (status !== "done") push(other, status === "confirmed" ? "Site visit confirmed" : "Site visit cancelled", `${name} · ${when}`, "/dashboard?tab=visits");
-  }
+export async function ownerVisit(id: string, status: "available" | "unavailable", note?: string) {
+  const { supabase } = await requireUser();
+  const { data } = await supabase.from("visit_offers").update({ status, owner_note: note?.trim().slice(0, 300) || null })
+    .eq("id", id).select("visit_id, status, listing:listings(name)").single();
+  if (data?.status !== status) return;
+  await serviceClient().from("visits").update({ status: "owner_responded" }).eq("id", data.visit_id);
+  pushAdmins(status === "available" ? "Owner can host a visit" : "Owner can't host a visit", `${listingName(data.listing)}. Confirm with the company.`, "/admin/visits");
   revalidatePath("/dashboard");
 }
 

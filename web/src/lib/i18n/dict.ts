@@ -36,7 +36,10 @@ const en = {
   "alert.visitRequest": "Visit request from {c}",
   "alert.quoteReceived": "New quote received",
   "alert.visitConfirmed": "Site visit confirmed",
-  "alert.aCompany": "a company",
+  "alert.aCompany": "a verified company",
+  "alert.ownerQuoted": "Owner quote to review",
+  "alert.accepted": "{c} accepted a quote",
+  "alert.ownerVisit": "Owner replied to a visit request",
 
   // phone bottom bar
   "mnav.home": "Home",
@@ -344,8 +347,8 @@ const en = {
   "r.notePh": "Who is visiting, vehicle no.",
   "r.booking": "Booking…",
   "r.requestVisit": "Request site visit",
-  "msg.quoteOk": "Quote requested. The owner usually replies within 24 hours.",
-  "msg.visitOk": "Visit requested. You'll get a confirmation once the owner accepts.",
+  "msg.quoteOk": "Request received. Our team will get you the best quote, usually within 24 hours.",
+  "msg.visitOk": "Visit requested. Our team will confirm the time with you shortly.",
   "msg.enterArea": "Enter the area you need.",
   "msg.futureDate": "Pick a future date and time.",
 
@@ -435,7 +438,10 @@ const hi: Dict = {
   "alert.visitRequest": "{c} से विज़िट अनुरोध",
   "alert.quoteReceived": "नया कोटेशन मिला",
   "alert.visitConfirmed": "साइट विज़िट कन्फ़र्म",
-  "alert.aCompany": "एक कंपनी",
+  "alert.aCompany": "एक सत्यापित कंपनी",
+  "alert.ownerQuoted": "मालिक का कोटेशन जाँचें",
+  "alert.accepted": "{c} ने कोटेशन स्वीकार किया",
+  "alert.ownerVisit": "मालिक ने विज़िट अनुरोध का जवाब दिया",
 
   "mnav.home": "होम",
   "mnav.explore": "खोजें",
@@ -733,8 +739,8 @@ const hi: Dict = {
   "r.notePh": "कौन आ रहा है, गाड़ी नंबर",
   "r.booking": "बुक हो रहा है…",
   "r.requestVisit": "साइट विज़िट का अनुरोध करें",
-  "msg.quoteOk": "कोटेशन का अनुरोध भेजा गया। मालिक आमतौर पर 24 घंटों में जवाब देते हैं।",
-  "msg.visitOk": "विज़िट का अनुरोध भेजा गया। मालिक के स्वीकार करते ही आपको पुष्टि मिलेगी।",
+  "msg.quoteOk": "अनुरोध मिल गया। हमारी टीम आमतौर पर 24 घंटों में आपको सबसे अच्छा कोटेशन देगी।",
+  "msg.visitOk": "विज़िट का अनुरोध भेजा गया। हमारी टीम जल्द ही समय की पुष्टि करेगी।",
   "msg.enterArea": "आपको जितना एरिया चाहिए, वह लिखें।",
   "msg.futureDate": "आने वाली तारीख और समय चुनें।",
 
@@ -820,7 +826,10 @@ const mr: Dict = {
   "alert.visitRequest": "{c} कडून भेटीची विनंती",
   "alert.quoteReceived": "नवीन कोटेशन मिळाले",
   "alert.visitConfirmed": "साइट भेट निश्चित",
-  "alert.aCompany": "एक कंपनी",
+  "alert.aCompany": "एक सत्यापित कंपनी",
+  "alert.ownerQuoted": "मालकाचे कोटेशन तपासा",
+  "alert.accepted": "{c} ने कोटेशन स्वीकारले",
+  "alert.ownerVisit": "मालकाने भेटीच्या विनंतीला उत्तर दिले",
 
   "mnav.home": "होम",
   "mnav.explore": "शोधा",
@@ -1118,8 +1127,8 @@ const mr: Dict = {
   "r.notePh": "कोण भेट देणार, गाडी नंबर",
   "r.booking": "बुक होत आहे…",
   "r.requestVisit": "साइट भेटीची विनंती करा",
-  "msg.quoteOk": "कोटेशनची विनंती पाठवली. मालक साधारणपणे 24 तासांत उत्तर देतात.",
-  "msg.visitOk": "भेटीची विनंती पाठवली. मालकाने स्वीकारताच तुम्हाला पुष्टी मिळेल.",
+  "msg.quoteOk": "विनंती मिळाली. आमची टीम साधारणपणे 24 तासांत तुम्हाला सर्वोत्तम कोटेशन देईल.",
+  "msg.visitOk": "भेटीची विनंती पाठवली. आमची टीम लवकरच वेळेची पुष्टी करेल.",
   "msg.enterArea": "तुम्हाला हवे असलेले क्षेत्र लिहा.",
   "msg.futureDate": "पुढील तारीख आणि वेळ निवडा.",
 

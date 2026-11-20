@@ -15,14 +15,16 @@ export default async function AdminOverview() {
   const by = <T extends Record<string, unknown>>(rows: T[], k: keyof T) =>
     rows.reduce<Record<string, number>>((a, r) => { const v = String(r[k]); a[v] = (a[v] ?? 0) + 1; return a; }, {});
   const ls = by(L, "status"), roles = by(P, "role"), qs = by(Q, "status"), vs = by(V, "status");
+  const dealTodo = (qs.pending_review ?? 0) + (qs.owner_quoted ?? 0) + (qs.counter_review ?? 0) + (qs.accepted ?? 0);
+  const visitTodo = (vs.pending_review ?? 0) + (vs.owner_responded ?? 0);
   const name = (x: unknown) => (x as { name?: string } | null)?.name ?? "—";
 
   const tiles = [
     { label: "Awaiting approval", value: ls.submitted ?? 0, icon: ClipboardCheck, tint: "bg-lime text-ink", href: "/admin/approvals", hot: (ls.submitted ?? 0) > 0 },
     { label: "Live listings", value: ls.live ?? 0, icon: Warehouse, tint: "bg-mint/10 text-mint", href: "/admin/listings?status=live" },
     { label: "Users", value: P.length, icon: Users, tint: "bg-brand/10 text-brand", href: "/admin/users" },
-    { label: "Open quote requests", value: (qs.requested ?? 0) + (qs.negotiating ?? 0), icon: FileText, tint: "bg-amber/15 text-amber", href: "/admin/quotes?status=requested" },
-    { label: "Visits to confirm", value: vs.requested ?? 0, icon: CalendarClock, tint: "bg-coral/10 text-coral", href: "/admin/visits?status=requested" },
+    { label: "Deals need action", value: dealTodo, icon: FileText, tint: "bg-amber/15 text-amber", href: "/admin/quotes", hot: dealTodo > 0 },
+    { label: "Visits need action", value: visitTodo, icon: CalendarClock, tint: "bg-coral/10 text-coral", href: "/admin/visits", hot: visitTodo > 0 },
   ];
 
   const activity = [
@@ -49,7 +51,7 @@ export default async function AdminOverview() {
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <section className="rounded-[1.5rem] bg-white p-5 shadow-[var(--shadow-soft)] ring-1 ring-line">
           <h2 className="text-lg font-extrabold">Breakdown</h2>
-          {[["Listings", ls], ["Users", roles], ["Quotes", qs], ["Site visits", vs]].map(([title, counts]) => (
+          {[["Listings", ls], ["Users", roles], ["Deals", qs], ["Site visits", vs]].map(([title, counts]) => (
             <div key={title as string} className="mt-4">
               <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">{title as string}</p>
               <div className="flex flex-wrap gap-2">

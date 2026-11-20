@@ -11,8 +11,13 @@ export const metadata: Metadata = { title: { default: "Admin console", template:
 /** Separate admin area: own sidebar and top bar, no public header or phone bottom bar. Admins only. */
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const { supabase, profile, user } = await requireAdminPage();
-  const { count } = await supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "submitted");
-  const pending = count ?? 0;
+  const head = { count: "exact", head: true } as const;
+  const [listings, deals, visits] = await Promise.all([
+    supabase.from("listings").select("id", head).eq("status", "submitted"),
+    supabase.from("quotes").select("id", head).in("status", ["pending_review", "owner_quoted", "counter_review", "accepted"]),
+    supabase.from("visits").select("id", head).in("status", ["pending_review", "owner_responded"]),
+  ]);
+  const counts = { pending: listings.count ?? 0, deals: deals.count ?? 0, visits: visits.count ?? 0 };
   const who = profile?.full_name || user?.email || "Admin";
 
   return (
@@ -23,7 +28,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
           <span className="grid size-10 place-items-center rounded-2xl bg-lime text-ink"><ShieldCheck className="size-5" /></span>
           <span className="leading-tight"><b className="display block text-base">Admin console</b><span className="text-[11px] text-ice/70">Chakan MIDC Force</span></span>
         </Link>
-        <div className="mt-8 flex-1"><Suspense><AdminNav pending={pending} variant="side" /></Suspense></div>
+        <div className="mt-8 flex-1"><Suspense><AdminNav counts={counts} variant="side" /></Suspense></div>
         <div className="space-y-2 border-t border-white/10 pt-4 text-sm">
           <Link href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-ice/80 hover:bg-white/10 hover:text-white"><ExternalLink className="size-4" /> View website</Link>
           <div className="rounded-xl bg-white/5 px-3 py-2.5">
@@ -45,7 +50,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             <form action={signOut}><button className="rounded-full px-3 py-1.5 text-xs font-bold text-coral hover:bg-white/10">Sign out</button></form>
           </div>
         </div>
-        <Suspense><AdminNav pending={pending} variant="tabs" /></Suspense>
+        <Suspense><AdminNav counts={counts} variant="tabs" /></Suspense>
       </header>
 
       <main className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">{children}</main>

@@ -9,12 +9,12 @@ const NAV = [
   { href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck, badge: "pending" },
   { href: "/admin/listings", label: "Listings", icon: Warehouse },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/quotes", label: "Quotes", icon: FileText },
-  { href: "/admin/visits", label: "Site visits", icon: CalendarClock },
+  { href: "/admin/quotes", label: "Deals", icon: FileText, badge: "deals" },
+  { href: "/admin/visits", label: "Site visits", icon: CalendarClock, badge: "visits" },
 ] as const;
 
 /** Sidebar links (desktop) and scrolling tabs (phones). */
-export function AdminNav({ pending, variant }: { pending: number; variant: "side" | "tabs" }) {
+export function AdminNav({ counts, variant }: { counts: Record<string, number>; variant: "side" | "tabs" }) {
   const path = usePathname();
   const active = (href: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
   if (variant === "tabs") {
@@ -24,7 +24,7 @@ export function AdminNav({ pending, variant }: { pending: number; variant: "side
           <Link key={href} href={href} aria-current={active(href) ? "page" : undefined}
             className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold ${active(href) ? "bg-white text-navy" : "bg-white/10 text-ice"}`}>
             <Icon className="size-4" /> {label}
-            {"badge" in rest && pending > 0 && <span className="rounded-full bg-lime px-1.5 text-[11px] text-ink">{pending}</span>}
+            {"badge" in rest && counts[rest.badge] > 0 && <span className="rounded-full bg-lime px-1.5 text-[11px] text-ink">{counts[rest.badge]}</span>}
           </Link>
         ))}
       </nav>
@@ -36,7 +36,7 @@ export function AdminNav({ pending, variant }: { pending: number; variant: "side
         <Link key={href} href={href} aria-current={active(href) ? "page" : undefined}
           className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${active(href) ? "bg-white text-navy shadow" : "text-ice/80 hover:bg-white/10 hover:text-white"}`}>
           <Icon className="size-[18px]" /> {label}
-          {"badge" in rest && pending > 0 && <span className="ml-auto grid min-w-6 place-items-center rounded-full bg-lime px-1.5 text-xs text-ink">{pending}</span>}
+          {"badge" in rest && counts[rest.badge] > 0 && <span className="ml-auto grid min-w-6 place-items-center rounded-full bg-lime px-1.5 text-xs text-ink">{counts[rest.badge]}</span>}
         </Link>
       ))}
     </nav>
@@ -68,9 +68,9 @@ export function StatusSelect({ action, value, options, label }: {
   return (
     <span className="relative inline-flex items-center">
       <select aria-label={label} defaultValue={value} disabled={pending}
-        onChange={(e) => { const v = e.target.value; start(async () => { try { await action(v); } catch (err) { alert((err as Error).message); } }); }}
+        onChange={(e) => { const v = e.target.value; if (!v) return; start(async () => { try { await action(v); } catch (err) { alert((err as Error).message); } }); }}
         className="rounded-full border border-line bg-white py-1.5 pl-3 pr-7 text-xs font-bold capitalize outline-none focus:border-sky disabled:opacity-60">
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o) => <option key={o} value={o}>{o ? o.replace(/_/g, " ") : "Choose…"}</option>)}
       </select>
       {pending && <Loader2 className="pointer-events-none absolute right-2 size-3.5 animate-spin text-muted" />}
     </span>
@@ -112,9 +112,9 @@ export function TableFilters({ statuses, param = "status", placeholder }: { stat
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1">
-        {["", ...statuses].map((s) => (
-          <button key={s || "all"} type="button" onClick={() => set(param, s)} data-active={current === s}
-            className="chip shrink-0 !py-1.5 capitalize">{s || "All"}</button>
+        {(statuses.includes("all") ? statuses : ["", ...statuses]).map((s, i) => (
+          <button key={s || "all"} type="button" onClick={() => set(param, s)} data-active={current === s || (!current && i === 0)}
+            className="chip shrink-0 !py-1.5 capitalize">{s ? s.replace(/[_-]/g, " ") : "All"}</button>
         ))}
       </div>
       {placeholder && (
@@ -124,5 +124,23 @@ export function TableFilters({ statuses, param = "status", placeholder }: { stat
         </form>
       )}
     </div>
+  );
+}
+
+/** Form bound to a server action; reports errors instead of crashing the page. */
+export function ActionForm({ action, className, children, confirm }: {
+  action: (fd: FormData) => Promise<void>; className?: string; children: React.ReactNode; confirm?: string;
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <form className={className} aria-busy={pending}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (confirm && !window.confirm(confirm)) return;
+        const fd = new FormData(e.currentTarget);
+        start(async () => { try { await action(fd); } catch (err) { alert((err as Error).message); } });
+      }}>
+      <fieldset disabled={pending} className="contents">{children}</fieldset>
+    </form>
   );
 }

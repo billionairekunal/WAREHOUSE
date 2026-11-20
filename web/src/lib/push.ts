@@ -32,3 +32,12 @@ export async function notify(userId: string | null | undefined, msg: Msg) {
     console.error("push failed", e);
   }
 }
+
+/** Pushes to every admin (new requests, owner replies, counters). Server-only; never throws. */
+export async function notifyAdmins(msg: Msg) {
+  try {
+    const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, { auth: { persistSession: false } });
+    const { data } = await db.from("profiles").select("id").eq("role", "admin");
+    await Promise.all((data ?? []).map((a) => notify(a.id as string, msg)));
+  } catch { /* push is best-effort */ }
+}

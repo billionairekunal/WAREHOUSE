@@ -4,11 +4,20 @@ export const STATUS_STYLE: Record<string, string> = {
   rejected: "bg-coral/10 text-coral", paused: "bg-line text-muted",
   requested: "bg-ice text-royal", quoted: "bg-brand/10 text-brand", negotiating: "bg-amber/15 text-amber", accepted: "bg-mint/10 text-mint",
   withdrawn: "bg-line text-muted", expired: "bg-line text-muted", confirmed: "bg-mint/10 text-mint", done: "bg-navy/10 text-navy",
-  cancelled: "bg-line text-muted", tenant: "bg-brand/10 text-brand", owner: "bg-amber/15 text-amber", admin: "bg-lime text-ink",
+  cancelled: "bg-line text-muted", won: "bg-lime text-ink",
+  pending_review: "bg-coral/10 text-coral", owner_quoted: "bg-violet/10 text-violet", counter_review: "bg-coral/10 text-coral", owner_responded: "bg-violet/10 text-violet",
+  approved: "bg-mint/10 text-mint", declined: "bg-coral/10 text-coral", closed: "bg-line text-muted", available: "bg-mint/10 text-mint", unavailable: "bg-coral/10 text-coral",
+  tenant: "bg-brand/10 text-brand", owner: "bg-amber/15 text-amber", admin: "bg-lime text-ink",
+};
+
+/** Admin-facing names for deal stages. */
+export const STAGE: Record<string, string> = {
+  pending_review: "new · review", requested: "with owner", owner_quoted: "owner quoted · review", quoted: "with company",
+  counter_review: "counter · review", negotiating: "counter with owner", owner_responded: "owner replied",
 };
 
 export function Badge({ s, label }: { s: string; label?: string }) {
-  return <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${STATUS_STYLE[s] ?? "bg-line"}`}>{label ?? (s === "submitted" ? "awaiting review" : s === "tenant" ? "company" : s)}</span>;
+  return <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${STATUS_STYLE[s] ?? "bg-line"}`}>{label ?? (s === "submitted" ? "awaiting review" : s === "tenant" ? "company" : (STAGE[s] ?? s))}</span>;
 }
 
 export function PageHead({ title, sub, children }: { title: string; sub?: string; children?: React.ReactNode }) {

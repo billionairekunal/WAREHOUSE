@@ -1,16 +1,16 @@
 "use client";
 import { useActionState, useState, useTransition } from "react";
 import { Check, MessageSquareReply, Pause, Play, X } from "lucide-react";
-import { ownerDecline, ownerQuote, setListingStatus, tenantQuoteAction, visitStatus } from "@/app/actions";
+import { cancelVisit, ownerDecline, ownerQuote, ownerVisit, setListingStatus, tenantQuoteAction } from "@/app/actions";
 
 export function TenantQuoteActions({ id, status, rent }: { id: string; status: string; rent: number | null }) {
   const [pending, start] = useTransition();
   const [counter, setCounter] = useState(false);
-  if (status === "requested") return <button disabled={pending} onClick={() => start(() => tenantQuoteAction(id, "withdrawn"))} className="text-xs font-bold text-muted hover:text-danger">Withdraw</button>;
-  if (!["quoted", "negotiating"].includes(status)) return null;
+  if (["pending_review", "requested", "owner_quoted", "counter_review", "negotiating"].includes(status)) return <button disabled={pending} onClick={() => start(() => tenantQuoteAction(id, "withdrawn"))} className="text-xs font-bold text-muted hover:text-danger">Withdraw</button>;
+  if (status !== "quoted") return null;
   if (counter) {
     return (
-      <form className="flex items-center gap-1.5" onSubmit={(e) => { e.preventDefault(); const v = Number(new FormData(e.currentTarget).get("c")); if (v > 0) start(() => tenantQuoteAction(id, "negotiating", v)); setCounter(false); }}>
+      <form className="flex items-center gap-1.5" onSubmit={(e) => { e.preventDefault(); const v = Number(new FormData(e.currentTarget).get("c")); if (v > 0) start(() => tenantQuoteAction(id, "counter_review", v)); setCounter(false); }}>
         <input name="c" type="number" step={0.5} min={1} defaultValue={rent ? rent - 1 : ""} aria-label="Counter rent per sq ft" className="field !w-20 !rounded-full !px-3 !py-1.5 text-sm" />
         <button className="btn btn-dark !px-3 !py-1.5 text-xs">Send</button>
         <button type="button" onClick={() => setCounter(false)} aria-label="Cancel" className="text-muted"><X className="size-4" /></button>
@@ -57,20 +57,24 @@ export function OwnerRespond({ q }: { q: { id: string; rent_psf: number | null; 
   );
 }
 
-export function VisitActions({ id, status, isOwner }: { id: string; status: string; isOwner: boolean }) {
+/** Owner answers whether they can host; the platform then confirms with the company. */
+export function OwnerVisitActions({ id, status }: { id: string; status: string }) {
   const [pending, start] = useTransition();
-  if (status === "requested" && isOwner) {
-    return (
-      <div className="flex gap-1.5">
-        <button disabled={pending} onClick={() => start(() => visitStatus(id, "confirmed"))} className="btn btn-primary !px-3 !py-1.5 text-xs">Confirm</button>
-        <button disabled={pending} onClick={() => start(() => visitStatus(id, "cancelled"))} className="btn btn-ghost !px-3 !py-1.5 text-xs">Decline</button>
-      </div>
-    );
-  }
-  if (["requested", "confirmed"].includes(status)) {
-    return <button disabled={pending} onClick={() => start(() => visitStatus(id, isOwner ? "done" : "cancelled"))} className="btn btn-ghost !px-3 !py-1.5 text-xs">{isOwner ? "Mark done" : "Cancel"}</button>;
-  }
-  return null;
+  const [note, setNote] = useState("");
+  if (status !== "requested") return null;
+  return (
+    <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto">
+      <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="Note (optional)" aria-label="Note for the platform" className="field !w-full !rounded-full !px-3 !py-1.5 text-sm sm:!w-44" />
+      <button disabled={pending} onClick={() => start(() => ownerVisit(id, "available", note))} className="btn btn-primary !px-3 !py-1.5 text-xs">I can host</button>
+      <button disabled={pending} onClick={() => start(() => ownerVisit(id, "unavailable", note))} className="btn btn-ghost !px-3 !py-1.5 text-xs">Not available</button>
+    </div>
+  );
+}
+
+export function TenantVisitCancel({ id, status }: { id: string; status: string }) {
+  const [pending, start] = useTransition();
+  if (!["pending_review", "requested", "owner_responded", "confirmed"].includes(status)) return null;
+  return <button disabled={pending} onClick={() => start(() => cancelVisit(id))} className="btn btn-ghost !px-3 !py-1.5 text-xs">Cancel</button>;
 }
 
 export function ListingToggle({ id, status }: { id: string; status: string }) {

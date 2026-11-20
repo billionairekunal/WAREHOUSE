@@ -9,7 +9,7 @@ import { getSession } from "@/lib/supabase/server";
 import { CARD_FIELDS, type CardListing, costBreakdown, date, img, inr, sqft } from "@/lib/data";
 import { ListingCard } from "@/components/ListingCard";
 import { EnablePush } from "@/components/EnablePush";
-import { ListingToggle, OwnerRespond, TenantQuoteActions, VisitActions } from "./Actions";
+import { ListingToggle, OwnerRespond, OwnerVisitActions, TenantQuoteActions, TenantVisitCancel } from "./Actions";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -20,19 +20,34 @@ type Quote = {
   counter_rent_psf: number | null; tenant_name: string | null; tenant_company: string | null; created_at: string;
   listing: { id: string; name: string; micro_market: string | null; photos: string[] } | null;
 };
-type Visit = {
-  id: string; status: string; scheduled_at: string; note: string | null; tenant_id: string; owner_id: string | null;
-  tenant_name: string | null; tenant_company: string | null; listing: { id: string; name: string; micro_market: string | null } | null;
+/** What an owner sees of a request: no company name, no contact. */
+type Offer = {
+  id: string; status: string; area_sqft: number; move_in: string | null; tenure_months: number | null; requirements: string | null;
+  counter_rent_psf: number | null; rent_psf: number | null; created_at: string; listing: { id: string; name: string; micro_market: string | null } | null;
 };
+type Visit = { id: string; status: string; scheduled_at: string; owner_note?: string | null; listing: { id: string; name: string; micro_market: string | null } | null };
 
 const STATUS: Record<string, string> = {
   requested: "bg-ice/60 text-royal", quoted: "bg-brand/10 text-brand", negotiating: "bg-warn/10 text-warn",
   accepted: "bg-success/10 text-success", rejected: "bg-danger/10 text-danger", withdrawn: "bg-line text-muted", expired: "bg-line text-muted",
+  won: "bg-lime text-ink", pending_review: "bg-ice/60 text-royal", owner_quoted: "bg-ice/60 text-royal", counter_review: "bg-warn/10 text-warn",
+  owner_responded: "bg-ice/60 text-royal", approved: "bg-success/10 text-success", declined: "bg-line text-muted", closed: "bg-line text-muted",
+  available: "bg-success/10 text-success", unavailable: "bg-line text-muted",
   confirmed: "bg-success/10 text-success", done: "bg-line text-muted", cancelled: "bg-line text-muted",
   draft: "bg-line text-muted", submitted: "bg-warn/10 text-warn", live: "bg-success/10 text-success", paused: "bg-line text-muted", leased: "bg-navy/10 text-navy",
 };
 const STAT_STYLE = [[Heart, ""], [FileText, "bg-amber/15 text-amber"], [Trophy, "bg-brand/10 text-brand"], [CheckCircle2, "bg-mint/10 text-mint"]] as const;
-const Badge = ({ s }: { s: string }) => <span className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${STATUS[s] ?? "bg-line"}`}>{s === "submitted" ? "In review" : s}</span>;
+/** Companies never see the internal back-and-forth; owners see their side only. */
+const COMPANY_LABEL: Record<string, string> = {
+  pending_review: "Getting quotes", requested: "Getting quotes", owner_quoted: "Getting quotes", quoted: "Quote ready", counter_review: "Negotiating",
+  negotiating: "Negotiating", won: "Deal closed", owner_responded: "Awaiting confirmation", submitted: "In review",
+};
+const OWNER_LABEL: Record<string, string> = {
+  requested: "New enquiry", owner_quoted: "Platform reviewing", negotiating: "Counter-offer", approved: "Sent to company", closed: "Closed",
+  available: "You can host", unavailable: "Not available", confirmed: "Visit confirmed", cancelled: "Cancelled",
+};
+const Badge = ({ s, owner }: { s: string; owner?: boolean }) => <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${STATUS[s] ?? "bg-line"}`}>{(owner ? OWNER_LABEL[s] : COMPANY_LABEL[s]) ?? s}</span>;
+const AWAITING = ["pending_review", "requested", "owner_responded"];
 
 export default async function Dashboard({ searchParams }: PageProps<"/dashboard">) {
   const { supabase, user, profile } = await getSession();
@@ -41,24 +56,28 @@ export default async function Dashboard({ searchParams }: PageProps<"/dashboard"
   const isOwner = profile?.role === "owner" || profile?.role === "admin";
   const QSEL = "*, listing:listings(id,name,micro_market,photos)";
 
-  const [myQuotes, incoming, visits, favs, mine] = await Promise.all([
+  const LSEL = "listing:listings(id,name,micro_market)";
+  const [myQuotes, incoming, visits, hosting, favs, mine] = await Promise.all([
     supabase.from("quotes").select(QSEL).eq("tenant_id", user.id).order("created_at", { ascending: false }),
-    isOwner ? supabase.from("quotes").select(QSEL).eq("owner_id", user.id).order("created_at", { ascending: false }) : Promise.resolve({ data: [] }),
-    supabase.from("visits").select("*, listing:listings(id,name,micro_market)").or(`tenant_id.eq.${user.id},owner_id.eq.${user.id}`).order("scheduled_at"),
+    isOwner ? supabase.from("quote_offers").select(`id,status,area_sqft,move_in,tenure_months,requirements,counter_rent_psf,rent_psf,created_at,${LSEL}`).eq("owner_id", user.id).order("updated_at", { ascending: false }) : Promise.resolve({ data: [] }),
+    supabase.from("visits").select(`id,status,scheduled_at,${LSEL}`).eq("tenant_id", user.id).order("scheduled_at"),
+    isOwner ? supabase.from("visit_offers").select(`id,status,scheduled_at,owner_note,${LSEL}`).eq("owner_id", user.id).order("scheduled_at") : Promise.resolve({ data: [] }),
     supabase.from("favorites").select(`listing:listings(${CARD_FIELDS})`).eq("user_id", user.id),
     isOwner ? supabase.from("listings").select("id,name,micro_market,status,verified,photos,area_available,rent_psf,rejection_reason,updated_at").eq("owner_id", user.id).order("updated_at", { ascending: false }) : Promise.resolve({ data: [] }),
   ]);
   const quotes = (myQuotes.data ?? []) as Quote[];
-  const requests = (incoming.data ?? []) as Quote[];
-  const allVisits = (visits.data ?? []) as Visit[];
+  const requests = (incoming.data ?? []) as unknown as Offer[];
+  const myVisits = (visits.data ?? []) as unknown as Visit[];
+  const hostVisits = (hosting.data ?? []) as unknown as Visit[];
+  const openRequests = requests.filter((r) => ["requested", "negotiating"].includes(r.status)).length;
   const saved = ((favs.data ?? []) as unknown as { listing: CardListing | null }[]).map((f) => f.listing).filter(Boolean) as CardListing[];
   const listings = (mine.data ?? []) as { id: string; name: string; micro_market: string; status: string; verified: boolean; photos: string[]; area_available: number; rent_psf: number; rejection_reason: string | null; updated_at: string }[];
 
   const tabs = [
     { key: "overview", label: "Overview", icon: LayoutGrid },
-    ...(isOwner ? [{ key: "listings", label: "My listings", icon: Warehouse, n: listings.length }, { key: "requests", label: "Quote requests", icon: FileText, n: requests.filter((r) => r.status === "requested").length }] : []),
+    ...(isOwner ? [{ key: "listings", label: "My listings", icon: Warehouse, n: listings.length }, { key: "requests", label: "Enquiries", icon: FileText, n: openRequests }] : []),
     { key: "quotes", label: "My quotes", icon: Trophy, n: quotes.filter((q) => q.status === "quoted").length },
-    { key: "visits", label: "Site visits", icon: CalendarClock, n: allVisits.filter((v) => v.status === "requested").length },
+    { key: "visits", label: "Site visits", icon: CalendarClock, n: hostVisits.filter((v) => v.status === "requested").length },
     { key: "saved", label: "Saved", icon: Heart, n: saved.length },
   ];
   const tab = tabs.some((t) => t.key === sp.tab) ? (sp.tab as string) : "overview";
@@ -67,11 +86,11 @@ export default async function Dashboard({ searchParams }: PageProps<"/dashboard"
   const priced = quotes.filter((q) => q.rent_psf).map((q) => ({
     q, c: costBreakdown(q.area_sqft, q.rent_psf!, q.cam_psf ?? 0, q.deposit_months ?? 0, q.lock_in_months || 12, q.escalation_pct ?? 0),
   }));
-  const bestId = priced.filter((p) => ["quoted", "negotiating"].includes(p.q.status)).sort((a, b) => a.c.total / a.q.area_sqft - b.c.total / b.q.area_sqft)[0]?.q.id;
+  const bestId = priced.filter((p) => ["quoted", "counter_review", "negotiating"].includes(p.q.status)).sort((a, b) => a.c.total / a.q.area_sqft - b.c.total / b.q.area_sqft)[0]?.q.id;
 
   const stats = isOwner
-    ? [["Live listings", listings.filter((l) => l.status === "live").length], ["New requests", requests.filter((r) => r.status === "requested").length], ["Quotes sent", requests.filter((r) => r.status === "quoted").length], ["Deals won", requests.filter((r) => r.status === "accepted").length]]
-    : [["Saved spaces", saved.length], ["Open requests", quotes.filter((q) => q.status === "requested").length], ["Quotes received", quotes.filter((q) => ["quoted", "negotiating"].includes(q.status)).length], ["Accepted", quotes.filter((q) => q.status === "accepted").length]];
+    ? [["Live listings", listings.filter((l) => l.status === "live").length], ["Open enquiries", openRequests], ["Quotes sent", requests.filter((r) => ["owner_quoted", "approved"].includes(r.status)).length], ["Visit requests", hostVisits.filter((v) => v.status === "requested").length]]
+    : [["Saved spaces", saved.length], ["Getting quotes", quotes.filter((q) => ["pending_review", "requested", "owner_quoted"].includes(q.status)).length], ["Quotes ready", quotes.filter((q) => ["quoted", "counter_review", "negotiating"].includes(q.status)).length], ["Accepted", quotes.filter((q) => ["accepted", "won"].includes(q.status)).length]];
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-6">
@@ -115,13 +134,18 @@ export default async function Dashboard({ searchParams }: PageProps<"/dashboard"
                   );
                 })}
               </div>
-              {isOwner ? <RequestsList requests={requests.slice(0, 4)} title="Latest quote requests" /> : <QuotesTable quotes={quotes.slice(0, 5)} bestId={bestId} priced={priced} />}
-              <VisitsList visits={allVisits.filter((v) => new Date(v.scheduled_at) > new Date()).slice(0, 4)} me={user.id} />
+              {isOwner ? <RequestsList requests={requests.slice(0, 4)} title="Latest enquiries" /> : <QuotesTable quotes={quotes.slice(0, 5)} bestId={bestId} priced={priced} />}
+              <VisitsList visits={(isOwner ? hostVisits : myVisits).filter((v) => new Date(v.scheduled_at) > new Date()).slice(0, 4)} owner={isOwner} />
             </>
           )}
           {tab === "quotes" && <QuotesTable quotes={quotes} bestId={bestId} priced={priced} />}
-          {tab === "requests" && <RequestsList requests={requests} title="Quote requests" />}
-          {tab === "visits" && <VisitsList visits={allVisits} me={user.id} />}
+          {tab === "requests" && <RequestsList requests={requests} title="Enquiries from the platform" />}
+          {tab === "visits" && (
+            <>
+              {isOwner && <VisitsList visits={hostVisits} owner />}
+              {(!isOwner || myVisits.length > 0) && <VisitsList visits={myVisits} />}
+            </>
+          )}
           {tab === "saved" && (
             saved.length
               ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{saved.map((l) => <ListingCard key={l.id} l={l} saved />)}</div>
@@ -157,7 +181,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/dashboard"
 }
 
 function QuotesTable({ quotes, bestId, priced }: { quotes: Quote[]; bestId?: string; priced: { q: Quote; c: ReturnType<typeof costBreakdown> }[] }) {
-  if (!quotes.length) return <Empty icon={FileText} title="No quotes yet" text="Request a quote from any listing. Owners usually reply within 24 hours." href="/search" cta="Find space" />;
+  if (!quotes.length) return <Empty icon={FileText} title="No quotes yet" text="Request a quote from any listing. Our team gets you the best terms, usually within 24 hours." href="/search" cta="Find space" />;
   const cost = new Map(priced.map((p) => [p.q.id, p.c]));
   return (
     <section className="card overflow-hidden">
@@ -222,22 +246,24 @@ function QuotesTable({ quotes, bestId, priced }: { quotes: Quote[]; bestId?: str
   );
 }
 
-function RequestsList({ requests, title }: { requests: Quote[]; title: string }) {
-  if (!requests.length) return <Empty icon={FileText} title="No quote requests yet" text="Verified, complete listings get the most requests. Add photos and specs to stand out." href="/list-space" cta="Improve a listing" />;
+function RequestsList({ requests, title }: { requests: Offer[]; title: string }) {
+  if (!requests.length) return <Empty icon={FileText} title="No enquiries yet" text="Our team sends you enquiries from verified companies. Complete listings with photos and specs get the most." href="/list-space" cta="Improve a listing" />;
   return (
     <section className="card p-5">
       <h2 className="text-2xl font-extrabold">{title}</h2>
+      <p className="mt-1 text-sm text-muted">Enquiries come from verified companies through Chakan MIDC Force. Our team shares your quote with them and handles the negotiation.</p>
       <ul className="mt-4 divide-y divide-line">
         {requests.map((q) => (
           <li key={q.id} className="py-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-extrabold">{q.tenant_company || "Company"} <span className="font-medium text-muted">· {q.tenant_name}</span></p>
-                <p className="text-sm text-muted">{q.listing?.name} · {sqft(q.area_sqft)} · move-in {date(q.move_in)} · {q.tenure_months ?? "—"} months</p>
-                {q.tenant_note && <p className="mt-1 text-sm">“{q.tenant_note}”</p>}
-                {q.counter_rent_psf && q.status === "negotiating" && <p className="mt-1 text-sm font-bold text-warn">Counter-offer: ₹{q.counter_rent_psf}/sq ft (your quote ₹{q.rent_psf})</p>}
+              <div className="min-w-0">
+                <p className="font-extrabold">A verified company <span className="font-medium text-muted">· {q.listing?.name}</span></p>
+                <p className="text-sm text-muted">{sqft(q.area_sqft)} · move-in {date(q.move_in)} · {q.tenure_months ?? "—"} months · {date(q.created_at)}</p>
+                {q.requirements && <p className="mt-1 text-sm">“{q.requirements}”</p>}
+                {q.status === "negotiating" && q.counter_rent_psf && <p className="mt-1 text-sm font-bold text-warn">Counter-offer: ₹{q.counter_rent_psf}/sq ft{q.rent_psf ? ` (you quoted ₹${q.rent_psf})` : ""}</p>}
+                {["owner_quoted", "approved"].includes(q.status) && q.rent_psf && <p className="mt-1 text-sm font-semibold text-brand">Your quote: ₹{q.rent_psf}/sq ft</p>}
               </div>
-              <Badge s={q.status} />
+              <Badge s={q.status} owner />
             </div>
             {["requested", "negotiating"].includes(q.status) && <div className="mt-3"><OwnerRespond q={q} /></div>}
           </li>
@@ -247,26 +273,32 @@ function RequestsList({ requests, title }: { requests: Quote[]; title: string })
   );
 }
 
-function VisitsList({ visits, me }: { visits: Visit[]; me: string }) {
-  if (!visits.length) return <Empty icon={CalendarClock} title="No site visits scheduled" text="Book a visit from any listing page." href="/search" cta="Find space" />;
+function VisitsList({ visits, owner }: { visits: Visit[]; owner?: boolean }) {
+  if (!visits.length) {
+    return owner
+      ? <Empty icon={CalendarClock} title="No visit requests" text="When a company wants to see your space, our team asks you here first." href="/dashboard?tab=listings" cta="My listings" />
+      : <Empty icon={CalendarClock} title="No site visits scheduled" text="Book a visit from any listing page." href="/search" cta="Find space" />;
+  }
   return (
     <section className="card p-5">
-      <h2 className="text-2xl font-extrabold">Site visits</h2>
+      <h2 className="text-2xl font-extrabold">{owner ? "Visit requests for your spaces" : "My site visits"}</h2>
+      {!owner && visits.some((v) => AWAITING.includes(v.status)) && <p className="mt-1 text-sm text-muted">Our team confirms the time with the owner and lets you know.</p>}
       <ul className="mt-4 space-y-3">
         {visits.map((v) => {
           const d = new Date(v.scheduled_at);
           return (
             <li key={v.id} className="flex flex-wrap items-center gap-4 rounded-3xl bg-surface p-3">
               <div className="grid w-16 shrink-0 place-items-center rounded-2xl bg-white py-2 text-center">
-                <span className="text-[11px] font-bold uppercase text-brand">{d.toLocaleDateString("en-IN", { month: "short" })}</span>
-                <span className="text-2xl font-extrabold leading-none">{d.getDate()}</span>
+                <span className="text-[11px] font-bold uppercase text-brand">{d.toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" })}</span>
+                <span className="text-2xl font-extrabold leading-none">{d.toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" })}</span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold">{v.listing?.name}</p>
-                <p className="text-sm text-muted">{d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })} · {v.owner_id === me ? `${v.tenant_company ?? "Company"} visiting` : v.listing?.micro_market}</p>
+                <p className="text-sm text-muted">{d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })} · {owner ? "A verified company" : v.listing?.micro_market}</p>
+                {owner && v.owner_note && <p className="text-xs text-muted">Your note: “{v.owner_note}”</p>}
               </div>
-              <Badge s={v.status} />
-              <VisitActions id={v.id} status={v.status} isOwner={v.owner_id === me} />
+              <Badge s={AWAITING.includes(v.status) && !owner ? "owner_responded" : v.status} owner={owner} />
+              {owner ? <OwnerVisitActions id={v.id} status={v.status} /> : <TenantVisitCancel id={v.id} status={v.status} />}
             </li>
           );
         })}
